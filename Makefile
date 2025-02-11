@@ -10,8 +10,8 @@ BUILD_DIR = build
 TARGET = cache_sim
 
 # source files
-SRCS = $(SRC_DIR)/main.cpp
-OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS)) # Convert .cpp to .o in build/
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS)) # convert .cpp to .o in build/
 
 all: $(TARGET)
 
@@ -20,11 +20,12 @@ $(TARGET): $(OBJS)
 
 # rule to compile each .cpp file into an .o file inside build/
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # ensures build directory exists before compilation
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/cli
 
 clean:
-	rm -f $(TARGET) $(BUILD_DIR)/*.o
+	rm -f $(TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o

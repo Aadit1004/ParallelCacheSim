@@ -14,7 +14,7 @@ private:
     std::vector<std::string> m_argument;
 
     bool validateCaches();
-    bool validateCores();
+    bool validateThreads();
     bool validatePolicy();
     bool validateTraceAndVerbose();
 

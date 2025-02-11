@@ -11,7 +11,7 @@ bool ArgParser::validateArguments() {
     if (m_argc != 12 && m_argc != 13) {
         return false;
     }
-    return validateCaches() && validateCores() && validatePolicy() && validateTraceAndVerbose();
+    return validateCaches() && validateThreads() && validatePolicy() && validateTraceAndVerbose();
     
 }
 
@@ -33,8 +33,12 @@ bool ArgParser::validateCaches() {
        m_argument[4] == "-l3" && isL3Valid;
 }
 
-bool ArgParser::validateCores() {
-    return m_argument[6] == "-cores" && isNumber(m_argument[7]) && std::stoi(m_argument[7]) >= 1;
+bool ArgParser::validateThreads() {
+    if (!isNumber(m_argument[7]) || m_argument[6] != "-threads") return false;
+    int coreValue = std::stoi(m_argument[7]);
+    if (coreValue < 1 || coreValue > 16) return false;
+    if (coreValue > 1 && (coreValue % 2 != 0)) return false;
+    return true;
 }
 
 bool ArgParser::validatePolicy() {

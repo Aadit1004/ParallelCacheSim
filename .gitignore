@@ -1,0 +1,21 @@
+# Ignore compiled binaries and object files
+cache_sim
+build/*.o
+build/
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore debug and profiling output
+*.dSYM/
+*.out
+vgcore.*
+
+# Ignore Visual Studio Code settings
+.vscode/
+*.code-workspace
+
+# Ignore Makefile generated files
+Makefile~

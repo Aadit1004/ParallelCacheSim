@@ -10,7 +10,7 @@ BUILD_DIR = build
 TARGET = cache_sim
 
 # source files
-SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp $(SRC_DIR)/cache/cache_config.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS)) # convert .cpp to .o in build/
 
 all: $(TARGET)
@@ -25,7 +25,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 
 # ensures build directory exists before compilation
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/cli
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/cli $(BUILD_DIR)/cache
 
 clean:
-	rm -f $(TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o
+	rm -f $(TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o $(BUILD_DIR)/cache/*.o

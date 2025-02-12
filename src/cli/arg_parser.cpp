@@ -6,13 +6,12 @@ ArgParser::ArgParser(int t_argc, char *t_argv[]) {
         m_argument.push_back(t_argv[i]);
     }
 }
-
+// ./cache_sim -cache_size medium -threads 4 -policy LRU -trace memory_access.log --verbose
 bool ArgParser::validateArguments() {
-    if (m_argc != 12 && m_argc != 13) {
+    if (m_argc != 8 && m_argc != 9) {
         return false;
     }
     return validateCaches() && validateThreads() && validatePolicy() && validateTraceAndVerbose();
-    
 }
 
 bool ArgParser::isNumber(const std::string& t_str) {
@@ -20,34 +19,41 @@ bool ArgParser::isNumber(const std::string& t_str) {
 }
 
 bool ArgParser::validateCaches() {
-    auto validateCacheSizes = [this](int cacheIndex) {
-        return m_argument[cacheIndex] == "small" || 
-               m_argument[cacheIndex] == "medium" || 
-               m_argument[cacheIndex] == "large";
-    };
-    bool isL1Valid = validateCacheSizes(1);
-    bool isL2Valid = validateCacheSizes(3);
-    bool isL3Valid = validateCacheSizes(5);
-    return m_argument[0] == "-l1" && isL1Valid &&
-       m_argument[2] == "-l2" && isL2Valid &&
-       m_argument[4] == "-l3" && isL3Valid;
+    bool validCacheSize =  m_argument[1] == "small" || m_argument[1] == "medium" || m_argument[1] == "large";;
+    return m_argument[0] == "-cache_size" && validCacheSize;
 }
 
 bool ArgParser::validateThreads() {
-    if (!isNumber(m_argument[7]) || m_argument[6] != "-threads") return false;
-    int coreValue = std::stoi(m_argument[7]);
-    if (coreValue < 1 || coreValue > 16) return false;
-    if (coreValue > 1 && (coreValue % 2 != 0)) return false;
+    if (!isNumber(m_argument[3]) || m_argument[2] != "-threads") return false;
+    int threadValue = std::stoi(m_argument[3]);
+    if (threadValue < 1 || threadValue > 16) return false;
+    if (threadValue > 1 && (threadValue % 2 != 0)) return false;
     return true;
 }
 
 bool ArgParser::validatePolicy() {
-    return m_argument[8] == "-policy" && 
-    (m_argument[9] == "LRU" || m_argument[9] == "FIFO" || m_argument[9] == "LFU");
+    return m_argument[4] == "-policy" && 
+    (m_argument[5] == "LRU" || m_argument[5] == "FIFO" || m_argument[5] == "LFU");
 }
 
 bool ArgParser::validateTraceAndVerbose() {
-    bool isTraceValid = m_argument[10] == "-trace" && !m_argument[11].empty();
-    bool isVerboseValid = (m_argc == 13) ? (m_argument[12] == "-verbose") : true;
+    bool isTraceValid = m_argument[6] == "-trace" && !m_argument[7].empty();
+    bool isVerboseValid = (m_argc == 9) ? (m_argument[8] == "--verbose") : true;
     return isTraceValid && isVerboseValid;
+}
+
+ValidParams ArgParser::getValidParams() {
+    ValidParams params;
+
+    CacheConfig cache_config = getCacheSizes(m_argument[1]);
+    params.l1_cache_size_kb = cache_config.l1_size_kb;
+    params.l2_cache_size_kb = cache_config.l2_size_kb;
+    params.l3_cache_size_kb = cache_config.l3_size_kb;
+
+    params.num_threads = std::stoi(m_argument[3]);
+    params.replacement_policy = m_argument[5];
+    params.access_file_name = m_argument[7];
+    params.isVerbose = (m_argc == 9);
+
+    return params;
 }

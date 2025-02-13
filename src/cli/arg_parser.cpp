@@ -6,12 +6,13 @@ ArgParser::ArgParser(int t_argc, char *t_argv[]) {
         m_argument.push_back(t_argv[i]);
     }
 }
-// ./cache_sim -cache_size medium -threads 4 -policy LRU -trace memory_access.log --verbose
+// EXAMPLE: ./cache_sim -cache_size medium -threads 4 -policy LRU -assoc 1 -write_policy WB -trace memory_access.log --verbose
 bool ArgParser::validateArguments() {
-    if (m_argc != 8 && m_argc != 9) {
+    if (m_argc != 12 && m_argc != 13) {
         return false;
     }
-    return validateCaches() && validateThreads() && validatePolicy() && validateTraceAndVerbose();
+    return validateCaches() && validateThreads() && validatePolicy() && 
+    validateAssociativity() && validateWritePolicy() && validateTraceAndVerbose();
 }
 
 bool ArgParser::isNumber(const std::string& t_str) {
@@ -19,7 +20,7 @@ bool ArgParser::isNumber(const std::string& t_str) {
 }
 
 bool ArgParser::validateCaches() {
-    bool validCacheSize =  m_argument[1] == "small" || m_argument[1] == "medium" || m_argument[1] == "large";;
+    bool validCacheSize =  m_argument[1] == "small" || m_argument[1] == "medium" || m_argument[1] == "large";
     return m_argument[0] == "-cache_size" && validCacheSize;
 }
 
@@ -36,9 +37,19 @@ bool ArgParser::validatePolicy() {
     (m_argument[5] == "LRU" || m_argument[5] == "FIFO" || m_argument[5] == "LFU");
 }
 
+bool ArgParser::validateAssociativity() {
+    if (!isNumber(m_argument[7]) || m_argument[6] != "-assoc") return false;
+    int assocNum = std::stoi(m_argument[7]);
+    return assocNum == 1 || assocNum == 4 || assocNum == -1;
+}
+
+bool ArgParser::validateWritePolicy() {
+    return m_argument[8] == "-write_policy" && (m_argument[9] == "WB" || m_argument[9] == "WT");
+}
+
 bool ArgParser::validateTraceAndVerbose() {
-    bool isTraceValid = m_argument[6] == "-trace" && !m_argument[7].empty();
-    bool isVerboseValid = (m_argc == 9) ? (m_argument[8] == "--verbose") : true;
+    bool isTraceValid = m_argument[10] == "-trace" && !m_argument[11].empty();
+    bool isVerboseValid = (m_argc == 9) ? (m_argument[12] == "--verbose") : true;
     return isTraceValid && isVerboseValid;
 }
 
@@ -49,11 +60,13 @@ ValidParams ArgParser::getValidParams() {
     params.l1_cache_size_kb = cache_config.l1_size_kb;
     params.l2_cache_size_kb = cache_config.l2_size_kb;
     params.l3_cache_size_kb = cache_config.l3_size_kb;
-
+    params.memory_size = m_argument[1];
     params.num_threads = std::stoi(m_argument[3]);
     params.replacement_policy = m_argument[5];
-    params.access_file_name = m_argument[7];
-    params.isVerbose = (m_argc == 9);
+    params.associativity = std::stoi(m_argument[7]);
+    params.write_policy = m_argument[9];
+    params.access_file_name = m_argument[11];
+    params.isVerbose = (m_argc == 13);
 
     return params;
 }

@@ -3,10 +3,10 @@
 
 CacheConfig getCacheSizes(const std::string& size) {
     if (size == "small") {
-        return {16, 128, 4096};  // L1 = 16KB, L2 = 128KB, L3 = 4MB
+        return {8, 32, 256};  // L1 = 8KB, L2 = 32KB, L3 = 256KB
     } else if (size == "medium") {
-        return {32, 256, 8192};  // L1 = 32KB, L2 = 256KB, L3 = 8MB
+        return {16, 64, 512}; // L1 = 16KB, L2 = 64KB, L3 = 512KB
     } else {
-        return {64, 512, 16384}; // L1 = 64KB, L2 = 512KB, L3 = 16MB
+        return {32, 128, 1024}; // L1 = 32KB, L2 = 128KB, L3 = 1MB
     }
 }

@@ -3,6 +3,8 @@
 #include <vector>
 #include <unordered_map>
 #include <cmath>
+#include <climits>
+#include "../memory/memory.h"
 
 enum Level {
     L1,
@@ -21,7 +23,8 @@ struct CacheLine {
     int m_data[defaults::BLOCK_SIZE / sizeof(int)];
     bool m_valid = false;
     bool m_dirty = false;
-    int m_lru_counter = 0;
+    int m_lru_age = 0;
+    int m_lfu_counter = 0;
     int m_mesi_state = 0;
 
     CacheLine() = default;
@@ -34,7 +37,7 @@ struct CacheLine {
 class Cache {
 
 public:
-    Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level);
+    Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory);
     void read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
 
@@ -44,8 +47,7 @@ private:
     int extractIndex(uint32_t t_address);
     int extractOffset(uint32_t t_address);
     CacheLine* findCacheLine(uint32_t t_address);
-
-    
+    void updateLRU(int t_index, CacheLine* accessedLine);    
     void evictCacheLine(int t_index);
     void handleEviction(int t_index, int t_tag);
     void forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value = 0);
@@ -57,8 +59,10 @@ private:
     int m_offset_bits;
     int m_index_bits;
     int m_tag_bits;
+    std::vector<int> m_fifo_ptr;
     std::string m_write_policy; // "WB" or "WT"
     std::vector<std::vector<CacheLine>> m_cache_sets;
     Cache* m_next_level_cache; // pointer to next cache line L1->L2->L3
     Level m_cache_level;
+    Memory& m_memory;
 };

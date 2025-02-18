@@ -1,6 +1,5 @@
 #include "cache_config.h"
 
-
 CacheConfig getCacheSizes(const std::string& size) {
     if (size == "small") {
         return {8, 32, 256};  // L1 = 8KB, L2 = 32KB, L3 = 256KB

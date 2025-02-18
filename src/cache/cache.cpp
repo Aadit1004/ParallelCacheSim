@@ -51,3 +51,47 @@ int Cache::extractIndex(uint32_t t_address) {
 int Cache::extractTag(uint32_t t_address) {
     return (t_address >> (m_offset_bits + m_index_bits));
 }
+
+CacheLine* Cache::findCacheLine(uint32_t t_address) {
+    int index = extractIndex(t_address);
+    int tag = extractTag(t_address);
+
+    for (CacheLine& line : m_cache_sets[index]) {
+        if (line.m_tag == tag && line.m_valid) {
+            return &line;
+        }
+    }
+
+    return nullptr;
+}
+
+void Cache::forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value) {
+    if (m_next_level_cache) {
+        if (t_isWrite) {
+            m_next_level_cache->write(t_address, t_value);
+        } else {
+            m_next_level_cache->read(t_address);
+        }
+    } else { // if there's no next level, access main memory
+        if (t_isWrite) {
+            // simulated_memory[t_address] = t_value;
+        } else {
+            // simulated_memory[t_address]; // read (no actual effect since memory isn't simulated)
+        }
+    }
+}
+
+void Cache::handleEviction(int t_index, int t_tag) {
+    evictCacheLine(t_index);  // evict a line from the set
+
+    // find an empty slot or overwrite evicted slot
+    for (CacheLine& line : m_cache_sets[t_index]) {
+        if (!line.m_valid) {  // found an invalid (empty) line
+            line.m_tag = t_tag;
+            line.m_valid = true;
+            line.m_dirty = false;
+            std::fill(std::begin(line.m_data), std::end(line.m_data), 0);  // init new block
+            return;
+        }
+    }
+}

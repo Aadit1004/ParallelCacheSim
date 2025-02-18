@@ -43,9 +43,9 @@ private:
     int extractTag(uint32_t t_address);
     int extractIndex(uint32_t t_address);
     int extractOffset(uint32_t t_address);
-
-
     CacheLine* findCacheLine(uint32_t t_address);
+
+    
     void evictCacheLine(int t_index);
     void handleEviction(int t_index, int t_tag);
     void forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value = 0);

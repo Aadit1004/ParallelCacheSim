@@ -14,7 +14,7 @@ TEST_TARGET = cache_test
 
 # source files
 SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp $(SRC_DIR)/cache/cache_config.cpp $(SRC_DIR)/cache/cache.cpp $(SRC_DIR)/memory/memory.cpp
-OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(filter-out $(SRC_DIR)/main.cpp, $(SRCS))) # Exclude main.cpp for test build
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(filter-out $(SRC_DIR)/main.cpp, $(SRCS))) # exclude main.cpp for test build
 
 # test files
 TEST_SRCS = $(wildcard $(TEST_DIR)/*.cpp)
@@ -50,3 +50,9 @@ $(BUILD_TEST_DIR):
 
 clean:
 	rm -f $(TARGET) $(TEST_TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o $(BUILD_DIR)/cache/*.o $(BUILD_DIR)/memory/*.o $(BUILD_TEST_DIR)/*.o
+
+# run Clang-Tidy on all spp files under /src
+TIDY_FLAGS = -checks='clang-analyzer-*,performance-*'
+
+tidy:
+	@clang-tidy $(TIDY_FLAGS) $(shell find $(SRC_DIR) -name '*.cpp') -fix-errors -- -std=c++17

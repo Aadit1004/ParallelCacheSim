@@ -35,5 +35,5 @@ private:
     bool validateWritePolicy();
     bool validateTraceAndVerbose();
 
-    bool isNumber(const std::string& t_str);
+    static bool isNumber(const std::string& t_str);
 };

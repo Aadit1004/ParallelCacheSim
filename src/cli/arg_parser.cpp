@@ -1,12 +1,11 @@
 #include "arg_parser.h"
 
-ArgParser::ArgParser(int t_argc, char *t_argv[]) {
-    this->m_argc = t_argc - 1;
+ArgParser::ArgParser(int t_argc, char *t_argv[]) : m_argc(t_argc - 1) {
     for (int i = 1; i < t_argc; i++) {
-        m_argument.push_back(t_argv[i]);
+        m_argument.emplace_back(t_argv[i]);
     }
 }
-// EXAMPLE: ./cache_sim -cache_size medium -threads 4 -policy LRU -assoc 1 -write_policy WB -trace memory_access.log --verbose
+// EXAMPLE: ./cache_sim -cache_size medium -threads 4 -policy LRU -assoc 1 -write_policy WB -trace memory_access.txt --verbose
 bool ArgParser::validateArguments() {
     if (m_argc != 12 && m_argc != 13) {
         return false;
@@ -25,10 +24,16 @@ bool ArgParser::validateCaches() {
 }
 
 bool ArgParser::validateThreads() {
-    if (!isNumber(m_argument[3]) || m_argument[2] != "-threads") return false;
+    if (!isNumber(m_argument[3]) || m_argument[2] != "-threads") { 
+        return false;
+    }
     int threadValue = std::stoi(m_argument[3]);
-    if (threadValue < 1 || threadValue > 16) return false;
-    if (threadValue > 1 && (threadValue % 2 != 0)) return false;
+    if (threadValue < 1 || threadValue > 16) { 
+        return false;
+    }
+    if (threadValue > 1 && (threadValue % 2 != 0)) { 
+        return false;
+    }
     return true;
 }
 
@@ -38,9 +43,10 @@ bool ArgParser::validatePolicy() {
 }
 
 bool ArgParser::validateAssociativity() {
-    if (!isNumber(m_argument[7]) || m_argument[6] != "-assoc") return false;
+    if (!isNumber(m_argument[7]) || m_argument[6] != "-assoc") { return false;
+}
     int assocNum = std::stoi(m_argument[7]);
-    return assocNum == 1 || assocNum == 4 || assocNum == -1;
+    return assocNum == 1 || assocNum == 4 || assocNum == 0;
 }
 
 bool ArgParser::validateWritePolicy() {
@@ -49,7 +55,7 @@ bool ArgParser::validateWritePolicy() {
 
 bool ArgParser::validateTraceAndVerbose() {
     bool isTraceValid = m_argument[10] == "-trace" && !m_argument[11].empty();
-    bool isVerboseValid = (m_argc == 9) ? (m_argument[12] == "--verbose") : true;
+    bool isVerboseValid = (m_argc == 13) ? (m_argument[12] == "--verbose") : true;
     return isTraceValid && isVerboseValid;
 }
 

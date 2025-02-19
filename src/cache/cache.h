@@ -42,10 +42,10 @@ public:
     void write(uint32_t t_address, int t_value);
 
 private:
-    int calculateNumberSets();
-    int extractTag(uint32_t t_address);
-    int extractIndex(uint32_t t_address);
-    int extractOffset(uint32_t t_address);
+    int calculateNumberSets() const;
+    int extractTag(uint32_t t_address) const;
+    int extractIndex(uint32_t t_address) const;
+    int extractOffset(uint32_t t_address) const;
     CacheLine* findCacheLine(uint32_t t_address);
     void updateLRU(int t_index, CacheLine* accessedLine);    
     void evictCacheLine(int t_index);

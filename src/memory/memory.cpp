@@ -1,4 +1,4 @@
-#include "Memory.h"
+#include "memory.h"
 
 Memory::Memory(int memory_size_kb) : m_memory_size_kb(memory_size_kb) {
     std::cout << "Initialized simulated memory: " << m_memory_size_kb << " KB\n";

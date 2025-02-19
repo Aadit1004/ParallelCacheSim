@@ -1,5 +1,7 @@
 #include "cache.h"
 
+#include <utility>
+
 // address => [tag (t bits) | set index (s bits) | block offset (b bits)]
 // t bits, s bits, b bits
 // B block size => b = log_2(B)
@@ -9,22 +11,24 @@
 // associativity (num cache lines per set):
 // 1 = directly mapped
 // 4 = 4-Way Set-Associative
-// -1 = fully associative
-Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory) : m_memory(t_memory) {
-    m_cache_size_kb = t_cache_size_kb;
-    m_associativity = t_associativity;
-    m_replacement_policy = t_replacement_policy;
-    m_write_policy = t_write_policy;
-    m_cache_level = t_cache_level;
-    m_next_level_cache = t_next_level;
-    m_num_sets = calculateNumberSets();
-    m_fifo_ptr = std::vector<int>(m_num_sets, 0);
-
-    m_offset_bits = static_cast<int>(log2(defaults::BLOCK_SIZE));
-    m_index_bits = static_cast<int>(log2(m_num_sets));
-    m_tag_bits = defaults::ADDRESS_BITS - m_index_bits - m_offset_bits;
-
-    if (m_associativity == -1) {
+// 0 = fully associative
+Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, 
+    std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory) 
+    : m_replacement_policy(std::move(t_replacement_policy)),
+    m_cache_size_kb(t_cache_size_kb),
+    m_associativity(t_associativity),
+    m_num_sets(calculateNumberSets()),
+    m_offset_bits(static_cast<int>(log2(defaults::BLOCK_SIZE))),
+    m_index_bits(static_cast<int>(log2(m_num_sets))),
+    m_tag_bits(defaults::ADDRESS_BITS - m_index_bits - m_offset_bits),
+    m_fifo_ptr(m_num_sets, 0),
+    m_write_policy(std::move(t_write_policy)),
+    
+    m_next_level_cache(t_next_level),
+    m_cache_level(t_cache_level),
+    m_memory(t_memory)
+    {
+    if (m_associativity == 0) {
         m_cache_sets = std::vector<std::vector<CacheLine>>(1, std::vector<CacheLine>(m_cache_size_kb * 1024 / defaults::BLOCK_SIZE));
     } else {
         m_cache_sets = std::vector<std::vector<CacheLine>>(m_num_sets, std::vector<CacheLine>(m_associativity));
@@ -32,24 +36,23 @@ Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement
 }
 
 // num sets = (total cache size / (block size * associativity)) || 1
-int Cache::calculateNumberSets() {
+int Cache::calculateNumberSets() const {
     const int cache_size_in_bytes = m_cache_size_kb * 1024;
-    if (m_associativity == -1) {
+    if (m_associativity == 0) {
         return 1;
-    } else {
-        return cache_size_in_bytes / (defaults::BLOCK_SIZE * m_associativity);
-    }
+    } 
+    return cache_size_in_bytes / (defaults::BLOCK_SIZE * m_associativity);
 }
 
-int Cache::extractOffset(uint32_t t_address) {
+int Cache::extractOffset(uint32_t t_address) const {
     return t_address & ((1 << m_offset_bits) - 1);
 }
 
-int Cache::extractIndex(uint32_t t_address) {
+int Cache::extractIndex(uint32_t t_address) const {
     return (t_address >> m_offset_bits) & ((1 << m_index_bits) - 1);
 }
 
-int Cache::extractTag(uint32_t t_address) {
+int Cache::extractTag(uint32_t t_address) const {
     return (t_address >> (m_offset_bits + m_index_bits));
 }
 
@@ -72,7 +75,7 @@ CacheLine* Cache::findCacheLine(uint32_t t_address) {
 }
 
 void Cache::forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value) {
-    if (m_next_level_cache) {
+    if (m_next_level_cache != nullptr) {
         if (t_isWrite) {
             m_next_level_cache->write(t_address, t_value);
         } else {
@@ -153,7 +156,7 @@ void Cache::updateLRU(int t_index, CacheLine* accessedLine) {
 
 void Cache::read(uint32_t t_address) {
     CacheLine* line = findCacheLine(t_address);
-    if (line) {
+    if (line != nullptr) {
        // We found the line and hit, TODO: log hit
         return;
     }
@@ -166,7 +169,8 @@ void Cache::read(uint32_t t_address) {
      handleEviction(index, tag); // evict if needed
  
      line = findCacheLine(t_address);
-     if (!line) return; // safety check
+     if (line == nullptr) { return; // safety check
+}
  
      // fetch full block from memory
      uint32_t block_start_address = t_address & ~(defaults::BLOCK_SIZE - 1);
@@ -180,7 +184,7 @@ void Cache::write(uint32_t t_address, int t_value) {
     int tag = extractTag(t_address);
 
     CacheLine* line = findCacheLine(t_address);
-    if (line) { // cache hit: update the value
+    if (line != nullptr) { // cache hit: update the value
         int word_offset = extractOffset(t_address) / sizeof(int);
         line->m_data[word_offset] = t_value;
 
@@ -197,7 +201,7 @@ void Cache::write(uint32_t t_address, int t_value) {
     handleEviction(index, tag);
     line = findCacheLine(t_address);
 
-    if (!line) {
+    if (line == nullptr) {
         // should never happen, but safety check
         return;
     }

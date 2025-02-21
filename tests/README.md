@@ -23,7 +23,7 @@ Here are the valid test categories you can filter with:
 - `[arg_parser]` - Tests related to CLI argument parsing
 - `[cache]` - Cache behavior tests
 - `[memory]` - Tests for memory initialization and read/write operations
-- `[cache-config]` - Tests for cache configuration and validation
+- `[cache_config]` - Tests for cache configuration and validation
 - More to come...
 
 ## Running a Single Test Case

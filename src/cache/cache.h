@@ -40,13 +40,20 @@ public:
     Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory);
     void read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
+    CacheLine* findCacheLine(uint32_t t_address);
+
+    // public getters for testing
+    int getOffsetBits() const { return m_offset_bits; }
+    int getIndexBits() const { return m_index_bits; }
+    int getTagBits() const { return m_tag_bits; }
+    int getNumSets() const { return m_num_sets; }
+    std::string getReplacementPolicy() const {return m_replacement_policy; } 
 
 private:
     int calculateNumberSets() const;
     int extractTag(uint32_t t_address) const;
     int extractIndex(uint32_t t_address) const;
     int extractOffset(uint32_t t_address) const;
-    CacheLine* findCacheLine(uint32_t t_address);
     void updateLRU(int t_index, CacheLine* accessedLine);    
     void evictCacheLine(int t_index);
     void handleEviction(int t_index, int t_tag);

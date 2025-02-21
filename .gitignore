@@ -1,6 +1,9 @@
 # Ignore compiled binaries and object files
 cache_sim
 build/*.o
+build/tests/*.o
+build/cli/*.o
+build/memory/*.o
 build/
 
 # Ignore logs and temporary files

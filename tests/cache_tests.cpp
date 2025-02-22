@@ -129,3 +129,16 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
         REQUIRE(cache.findCacheLine(0x2000) == nullptr);
     }
 }
+
+TEST_CASE("Profiling Test", "[cache]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+
+    uint32_t test_address = 0x1000;
+    int value = 42;
+
+    for (int i = 0; i < 1000000; i++) {
+        cache.write(test_address + (i % 1024) * 4, value);
+        cache.read(test_address + (i % 1024) * 4);
+    }
+}

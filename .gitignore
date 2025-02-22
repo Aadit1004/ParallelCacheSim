@@ -23,3 +23,7 @@ vgcore.*
 
 # Ignore Makefile generated files
 Makefile~
+
+# Ignore profiled files
+cache_sim_prof
+cache_test_prof

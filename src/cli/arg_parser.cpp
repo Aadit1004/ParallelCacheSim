@@ -63,9 +63,9 @@ ValidParams ArgParser::getValidParams() {
     ValidParams params;
 
     CacheConfig cache_config = getCacheSizes(m_argument[1]);
-    params.l1_cache_size_kb = cache_config.l1_size_kb;
-    params.l2_cache_size_kb = cache_config.l2_size_kb;
-    params.l3_cache_size_kb = cache_config.l3_size_kb;
+    params.l1_cache_size = cache_config.l1_size;
+    params.l2_cache_size = cache_config.l2_size;
+    params.l3_cache_size = cache_config.l3_size;
     params.memory_size = m_argument[1];
     params.num_threads = std::stoi(m_argument[3]);
     params.replacement_policy = m_argument[5];

@@ -5,11 +5,11 @@
 
 int getMemorySize(std::string& t_size) {
     if (t_size == "small") { 
-        return 4 * 1024;  // 4MB
+        return 4 * 1024 * 1024;  // 4MB
     } else if (t_size == "medium") { 
-        return 16 * 1024;  // 16MB
+        return 16 * 1024 * 1024;  // 16MB
     } else {
-        return 64 * 1024;  // 64MB
+        return 64 * 1024 * 1024;  // 64MB
     }
 }
 
@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
     if (argParser.validateArguments()) {
         ValidParams params = argParser.getValidParams();
 
-        int memory_size_kb = getMemorySize(params.memory_size);
-        Memory memory(memory_size_kb);
+        int memory_size_bytes = getMemorySize(params.memory_size);
+        Memory memory(memory_size_bytes);
 
         std::cout << "Valid argmunets passed" << std::endl;
     } else {

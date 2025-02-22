@@ -5,9 +5,9 @@
 #include "../cache/cache_config.h"
 
 struct ValidParams {
-    int l1_cache_size_kb;
-    int l2_cache_size_kb;
-    int l3_cache_size_kb;
+    int l1_cache_size;
+    int l2_cache_size;
+    int l3_cache_size;
     std::string memory_size;
     int num_threads;
     std::string replacement_policy;

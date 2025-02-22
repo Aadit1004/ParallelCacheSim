@@ -12,10 +12,10 @@
 // 1 = directly mapped
 // 4 = 4-Way Set-Associative
 // 0 = fully associative
-Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement_policy, 
+Cache::Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, 
     std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory) 
     : m_replacement_policy(std::move(t_replacement_policy)),
-    m_cache_size_kb(t_cache_size_kb),
+    m_cache_size(t_cache_size),
     m_associativity(t_associativity),
     m_num_sets(calculateNumberSets()),
     m_offset_bits(static_cast<int>(log2(defaults::BLOCK_SIZE))),
@@ -29,7 +29,7 @@ Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement
     m_memory(t_memory)
     {
     if (m_associativity == 0) {
-        m_cache_sets = std::vector<std::vector<CacheLine>>(1, std::vector<CacheLine>(m_cache_size_kb * 1024 / defaults::BLOCK_SIZE));
+        m_cache_sets = std::vector<std::vector<CacheLine>>(1, std::vector<CacheLine>(m_cache_size / defaults::BLOCK_SIZE));
     } else {
         m_cache_sets = std::vector<std::vector<CacheLine>>(m_num_sets, std::vector<CacheLine>(m_associativity));
     }
@@ -37,11 +37,10 @@ Cache::Cache(int t_cache_size_kb, int t_associativity, std::string t_replacement
 
 // num sets = (total cache size / (block size * associativity)) || 1
 int Cache::calculateNumberSets() const {
-    const int cache_size_in_bytes = m_cache_size_kb * 1024;
     if (m_associativity == 0) {
         return 1;
     } 
-    return cache_size_in_bytes / (defaults::BLOCK_SIZE * m_associativity);
+    return m_cache_size / (defaults::BLOCK_SIZE * m_associativity);
 }
 
 int Cache::extractOffset(uint32_t t_address) const {

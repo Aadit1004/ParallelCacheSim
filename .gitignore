@@ -1,5 +1,6 @@
 # Ignore compiled binaries and object files
 cache_sim
+cache_test
 build/*.o
 build/tests/*.o
 build/cli/*.o

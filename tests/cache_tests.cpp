@@ -2,11 +2,13 @@
 #include "../src/cache/cache.h"
 #include "../src/memory/memory.h"
 
+const int memorySize = 4 * 1024 * 1024;
+
 TEST_CASE("Cache Initialization", "[cache]") {
-    Memory memory(4 * 1024);
-    int cache_size_kb = 8;
+    Memory memory(memorySize);
+    int cache_size = 8 * 1024;
     auto associativity = GENERATE(1, 4, 0);
-    Cache cache(cache_size_kb, associativity, "LRU", "WB", L1, nullptr, memory);
+    Cache cache(cache_size, associativity, "LRU", "WB", L1, nullptr, memory);
     
     int expected_offset_bits = static_cast<int>(log2(defaults::BLOCK_SIZE));
     int num_sets = (associativity == 0) ? 1 : (8 * 1024) / (defaults::BLOCK_SIZE * associativity);
@@ -20,9 +22,9 @@ TEST_CASE("Cache Initialization", "[cache]") {
 }
 
 TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
-    Memory memory(4 * 1024);
+    Memory memory(memorySize);
     std::string replacementPolicy = GENERATE("LRU", "LFU", "FIFO");
-    Cache cache(8, 4, replacementPolicy, "WB", L1, nullptr, memory);
+    Cache cache(8 * 1024, 4, replacementPolicy, "WB", L1, nullptr, memory);
 
     uint32_t test_address = 0x1000;
     int expected_tag = test_address >> (cache.getOffsetBits() + cache.getIndexBits());
@@ -68,11 +70,11 @@ TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
 }
 
 TEST_CASE("Cache - Replacement Policies", "[cache]") {
-    Memory memory(4 * 1024);
+    Memory memory(memorySize);
     uint32_t addresses[] = {0x1000, 0x2000, 0x3000, 0x4000};
 
     SECTION("FIFO Replacement") {
-        Cache cache(8, 2, "FIFO", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "FIFO", "WB", L1, nullptr, memory);
 
         // fill cache
         for (auto addr : addresses) {
@@ -85,7 +87,7 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
     }
 
     SECTION("LRU Replacement") {
-        Cache cache(8, 2, "LRU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "LRU", "WB", L1, nullptr, memory);
 
         // fill cache
         for (auto addr : addresses) {
@@ -106,7 +108,7 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
     }
 
     SECTION("LFU Replacement") {
-        Cache cache(8, 2, "LFU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "LFU", "WB", L1, nullptr, memory);
 
         // fill cache
         for (auto addr : addresses) {

@@ -2,9 +2,10 @@
 #include <string>
 
 struct CacheConfig {
-    int l1_size_kb;
-    int l2_size_kb;
-    int l3_size_kb;
+    // size in bytes
+    int l1_size;
+    int l2_size;
+    int l3_size;
 };
 
 CacheConfig getCacheSizes(const std::string& t_size);

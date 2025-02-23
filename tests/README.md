@@ -24,6 +24,7 @@ Here are the valid test categories you can filter with:
 - `[cache]` - Cache behavior tests
 - `[memory]` - Tests for memory initialization and read/write operations
 - `[cache_config]` - Tests for cache configuration and validation
+- `[profiling]` - Performance and stress tests for evaluating cache efficiency, eviction behavior, and access patterns under high load.
 - More to come...
 
 ## Running a Single Test Case

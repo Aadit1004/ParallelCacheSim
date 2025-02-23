@@ -3,10 +3,9 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  Ts/call  Ts/call  name    
- 25.00      0.01     0.01                             Cache::findCacheLine(unsigned int)
- 25.00      0.02     0.01                             Cache::write(unsigned int, int)
- 25.00      0.03     0.01                             Memory::read(unsigned int)
- 25.00      0.04     0.01                             Memory::write(unsigned int, int)
+ 33.33      0.02     0.02                             Cache::findCacheLine(unsigned int)
+ 33.33      0.04     0.02                             Memory::write(unsigned int, int)
+ 33.33      0.06     0.02                             std::__detail::_Map_base<unsigned int, std::pair<unsigned int const, int>, std::allocator<std::pair<unsigned int const, int> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true>, true>::operator[](unsigned int const&)
 
  %         the percentage of the total running time of the
 time       program used by this function.

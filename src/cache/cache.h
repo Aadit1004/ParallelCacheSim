@@ -55,7 +55,7 @@ private:
     int extractIndex(uint32_t t_address) const;
     int extractOffset(uint32_t t_address) const;
     void updateLRU(int t_index, CacheLine* accessedLine);    
-    void evictCacheLine(int t_index);
+    void evictCacheLine(int t_index, int t_tag);
     void handleEviction(int t_index, int t_tag);
     void forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value = 0);
 

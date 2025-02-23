@@ -62,20 +62,21 @@ TIDY_FLAGS = -checks='clang-analyzer-*,performance-*'
 tidy:
 	@clang-tidy $(TIDY_FLAGS) $(shell find $(SRC_DIR) -name '*.cpp') -fix-errors -- -std=c++17
 
+# valgrind support
 valgrind: $(TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET) $(ARGS)
 
 valgrind_test: $(TEST_TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all ./$(TEST_TARGET)
 
-# Profiling build targets
+# profiling build targets
 $(PROF_TARGET): $(OBJS) $(BUILD_DIR)/main.o
 	$(CXX) $(CXXFLAGS) $(GPROF_FLAGS) -o $(PROF_TARGET) $(OBJS) $(BUILD_DIR)/main.o
 
 $(TEST_PROF_TARGET): $(TEST_OBJS) $(OBJS)
 	$(CXX) $(CXXFLAGS) $(GPROF_FLAGS) -o $(TEST_PROF_TARGET) $(TEST_OBJS) $(OBJS)
 
-# Gprof support
+# gprof support
 gprof-run: $(PROF_TARGET)
 	rm -f gmon.out
 	./$(PROF_TARGET) $(ARGS)

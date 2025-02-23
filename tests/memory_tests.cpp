@@ -70,3 +70,51 @@ TEST_CASE("Memory Access Above End Address Should Fail", "[memory]") {
     memory.write(invalid_address, 88);
     REQUIRE(memory.read(invalid_address) == 0);
 }
+
+TEST_CASE("Profiling - Memory Initialization", "[memory][profiling]") {
+    for (int i = 0; i < 1000; ++i) {
+        Memory memory(memory_size);
+        REQUIRE(true);
+    }
+}
+
+TEST_CASE("Profiling - Sequential Memory Writes", "[memory][profiling]") {
+    Memory memory(memory_size);
+    uint32_t base_address = 0x1000;
+
+    for (uint32_t i = 0; i < 100000; i += 4) {
+        memory.write(base_address + i, i);
+    }
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Profiling - Sequential Memory Reads", "[memory][profiling]") {
+    Memory memory(memory_size);
+    uint32_t base_address = 0x1000;
+
+    for (uint32_t i = 0; i < 100000; i += 4) {
+        memory.write(base_address + i, i);
+    }
+
+    for (uint32_t i = 0; i < 100000; i += 4) {
+        memory.read(base_address + i);
+    }
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Profiling - Random Memory Access", "[memory][profiling]") {
+    Memory memory(memory_size);
+    uint32_t base_address = 0x1000;
+
+    for (uint32_t i = 0; i < 100000; i += 4) {
+        memory.write(base_address + (rand() % 100000), i);
+    }
+
+    for (uint32_t i = 0; i < 100000; i += 4) {
+        memory.read(base_address + (rand() % 100000));
+    }
+
+    REQUIRE(true);
+}

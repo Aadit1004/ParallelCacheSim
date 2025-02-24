@@ -3,9 +3,21 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  Ts/call  Ts/call  name    
- 33.33      0.02     0.02                             Cache::findCacheLine(unsigned int)
- 33.33      0.04     0.02                             Memory::write(unsigned int, int)
- 33.33      0.06     0.02                             std::__detail::_Map_base<unsigned int, std::pair<unsigned int const, int>, std::allocator<std::pair<unsigned int const, int> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true>, true>::operator[](unsigned int const&)
+ 15.91      0.07     0.07                             Cache::findCacheLine(unsigned int)
+ 15.91      0.14     0.07                             Memory::read(unsigned int)
+ 11.36      0.19     0.05                             Cache::forwardToNextLevel(unsigned int, bool, int)
+ 11.36      0.24     0.05                             Cache::updateLRU(int, CacheLine*)
+  6.82      0.27     0.03                             C_A_T_C_H_T_E_S_T_35()
+  6.82      0.30     0.03                             Catch::AssertionHandler::AssertionHandler(Catch::StringRef const&, Catch::SourceLineInfo const&, Catch::StringRef, Catch::ResultDisposition::Flags)
+  6.82      0.33     0.03                             std::__detail::_Map_base<unsigned int, std::pair<unsigned int const, int>, std::allocator<std::pair<unsigned int const, int> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true>, true>::operator[](unsigned int const&)
+  4.55      0.35     0.02                             Cache::evictCacheLine(int)
+  4.55      0.37     0.02                             Cache::read(unsigned int)
+  4.55      0.39     0.02                             _init
+  2.27      0.40     0.01                             Cache::handleEviction(int, int)
+  2.27      0.41     0.01                             Catch::RunContext::handleExpr(Catch::AssertionInfo const&, Catch::ITransientExpression const&, Catch::AssertionReaction&)
+  2.27      0.42     0.01                             Catch::TestEventListenerBase::assertionStarting(Catch::AssertionInfo const&)
+  2.27      0.43     0.01                             Catch::StringRef::StringRef(char const*)
+  2.27      0.44     0.01                             Memory::write(unsigned int, int)
 
  %         the percentage of the total running time of the
 time       program used by this function.

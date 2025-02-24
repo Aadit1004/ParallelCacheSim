@@ -38,7 +38,7 @@ class Cache {
 
 public:
     Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory);
-    void read(uint32_t t_address);
+    int read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
     CacheLine* findCacheLine(uint32_t t_address);
 
@@ -55,7 +55,7 @@ private:
     int extractIndex(uint32_t t_address) const;
     int extractOffset(uint32_t t_address) const;
     void updateLRU(int t_index, CacheLine* accessedLine);    
-    void evictCacheLine(int t_index, int t_tag);
+    void evictCacheLine(int t_index);
     void handleEviction(int t_index, int t_tag);
     void forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value = 0);
 

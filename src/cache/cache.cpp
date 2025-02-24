@@ -56,13 +56,15 @@ int Cache::extractTag(uint32_t t_address) const {
 }
 
 CacheLine* Cache::findCacheLine(uint32_t t_address) {
-    int index = extractIndex(t_address);
+    int index = (m_associativity == 0) ? 0 : extractIndex(t_address);
     int tag = extractTag(t_address);
 
     for (CacheLine& line : m_cache_sets[index]) {
         if (line.m_tag == tag && line.m_valid) {
-            if (m_replacement_policy == "LRU") {
+            if (m_replacement_policy == "LRU" && m_associativity != 0) {
                 updateLRU(index, &line);
+            } else if (m_replacement_policy == "LRU" && m_associativity == 0) {
+                updateLRU(0, &line);
             } else if (m_replacement_policy == "LFU") {
                 line.m_lfu_counter++; 
             }
@@ -96,13 +98,13 @@ void Cache::handleEviction(int t_index, int t_tag) {
             line.m_valid = true;
             line.m_dirty = false;
             line.m_lfu_counter = 1;
-            line.m_lru_age = 0;
+            line.m_lru_age = 1;
             std::fill(std::begin(line.m_data), std::end(line.m_data), 0);  // init new block
             return;
         }
     }
 
-    evictCacheLine(t_index, t_tag);  // evict a line from the set
+    evictCacheLine(t_index);  // evict a line from the set
 
     // find an empty slot or overwrite evicted slot
     for (CacheLine& line : m_cache_sets[t_index]) {
@@ -111,7 +113,7 @@ void Cache::handleEviction(int t_index, int t_tag) {
             line.m_valid = true;
             line.m_dirty = false;
             line.m_lfu_counter = 1;
-            line.m_lru_age = 0;
+            line.m_lru_age = 1;
             std::fill(std::begin(line.m_data), std::end(line.m_data), 0);  // init new block
             return;
         }
@@ -121,79 +123,70 @@ void Cache::handleEviction(int t_index, int t_tag) {
 }
 
 
-void Cache::evictCacheLine(int t_index, int t_tag) {
+void Cache::evictCacheLine(int t_index) {
     int evict_index = 0;
+    int num_lines = (m_associativity == 0) ? m_cache_sets[0].size() : m_associativity;
 
-
-    if (m_associativity == 0) { // Fully associative case
-        int max_lru = -1;
-        for (long unsigned int i = 0; i < m_cache_sets[0].size(); i++) {
-            if (m_cache_sets[0][i].m_valid && m_cache_sets[0][i].m_lru_age > max_lru) {
-                max_lru = m_cache_sets[0][i].m_lru_age;
-                evict_index = i;
-            }
-        }
-    } else if (m_replacement_policy == "FIFO") {
+    if (m_replacement_policy == "FIFO") {
         evict_index = m_fifo_ptr[t_index];
-        m_fifo_ptr[t_index] = (m_fifo_ptr[t_index] + 1) % m_associativity;
+        m_fifo_ptr[t_index] = (m_fifo_ptr[t_index] + 1) % num_lines;
     } else if (m_replacement_policy == "LRU") {
         int max_lru = -1;
-        for (int i = 0; i < m_associativity; i++) {
-            if (m_cache_sets[t_index][i].m_valid && m_cache_sets[t_index][i].m_lru_age > max_lru) {
-                max_lru = m_cache_sets[t_index][i].m_lru_age;
+        for (int i = 0; i < num_lines; i++) {
+            CacheLine& line = (m_associativity == 0) ? m_cache_sets[0][i] : m_cache_sets[t_index][i];
+            if (line.m_valid && line.m_lru_age > max_lru) {
+                max_lru = line.m_lru_age;
                 evict_index = i; // evict index is most lru
             }
         }
     } else if (m_replacement_policy == "LFU") {
         int min_lfu = INT_MAX;
-        for (int i = 0; i < m_associativity; i++) {
-            if (m_cache_sets[t_index][i].m_valid && m_cache_sets[t_index][i].m_lfu_counter < min_lfu) {
-                min_lfu = m_cache_sets[t_index][i].m_lfu_counter;
+        for (int i = 0; i < num_lines; i++) {
+            CacheLine& line = (m_associativity == 0) ? m_cache_sets[0][i] : m_cache_sets[t_index][i];
+            if (line.m_valid && line.m_lfu_counter < min_lfu) {
+                min_lfu = line.m_lfu_counter;
                 evict_index = i;
             }
         }
     }
 
     // If WB, write dirty block to memory
-    CacheLine& evicted_line = m_cache_sets[t_index][evict_index];
+    CacheLine& evicted_line = (m_associativity == 0) ? m_cache_sets[0][evict_index] : m_cache_sets[t_index][evict_index];
     if (evicted_line.m_valid && evicted_line.m_dirty && m_write_policy == "WB") {
         uint32_t block_address = (evicted_line.m_tag << (m_index_bits + m_offset_bits)) | (t_index << m_offset_bits);
         for (size_t i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
             m_memory.write(block_address + (i * sizeof(int)), evicted_line.m_data[i]);
         }
         evicted_line.m_dirty = false;
-    } else if (m_write_policy == "WT") {
-        
     }
 
     // invalidate cache line
     evicted_line.m_valid = false;
     evicted_line.m_dirty = false;
-    evicted_line.m_tag = t_tag;
-    evicted_line.m_lfu_counter = 1;
-    evicted_line.m_lru_age = 0;
-    std::fill(std::begin(evicted_line.m_data), std::end(evicted_line.m_data), 0);
 }
 
 void Cache::updateLRU(int t_index, CacheLine* accessedLine) {
+    int max_lru = 0;
+    
     for (CacheLine& line : m_cache_sets[t_index]) {
         if (line.m_valid && &line != accessedLine) {
-            line.m_lru_age++;  // increment counter for all valid lines
+            line.m_lru_age++;  // increment all other valid lines
+            max_lru = std::max(max_lru, line.m_lru_age);
         }
     }
-    accessedLine->m_lru_age = 0;  // reset counter for most recently used
 }
 
-void Cache::read(uint32_t t_address) {
+int Cache::read(uint32_t t_address) {
     if (t_address % sizeof(int) != 0) {
         // std::cerr << "[ERROR] Unaligned cache read at address 0x" << std::hex << t_address << std::dec << "\n";
-        return;
+        return 0; // TODO: some invalid value indication ?? throw exception maybe
     }
 
     CacheLine* line = findCacheLine(t_address);
     if (line != nullptr) {
-       // We found the line and hit, TODO: log hit
-        return;
+        // We found the line and hit, TODO: log hit
+        int value_offset = extractOffset(t_address) / sizeof(int);
+        return line->m_data[value_offset];
     }
 
     forwardToNextLevel(t_address, false);
@@ -204,14 +197,18 @@ void Cache::read(uint32_t t_address) {
      handleEviction(index, tag); // evict if needed
  
      line = findCacheLine(t_address);
-     if (line == nullptr) { return; // safety check
-}
+     if (line == nullptr) { 
+        return 0; // safety check
+    }
  
      // fetch full block from memory
      uint32_t block_start_address = t_address & ~(defaults::BLOCK_SIZE - 1);
      for (long unsigned int i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
          line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int)));
      }
+
+    int value_offset = extractOffset(t_address) / sizeof(int);
+    return line->m_data[value_offset];
 }
 
 void Cache::write(uint32_t t_address, int t_value) {
@@ -234,6 +231,10 @@ void Cache::write(uint32_t t_address, int t_value) {
             m_memory.write(t_address, t_value); // WT writes immediately to memory
             forwardToNextLevel(t_address, true, t_value);
         }
+
+        if (m_replacement_policy == "LRU") {
+            updateLRU((m_associativity == 0) ? 0 : index, line);
+        }
         return;
     }
 
@@ -243,13 +244,14 @@ void Cache::write(uint32_t t_address, int t_value) {
 
     if (line == nullptr) {
         // should never happen, but safety check
+        std::cout << "[Cache::write] should never reach here, but safety check" << std::endl;
         return;
     }
 
     // fetch block from memory and store in cache
     uint32_t block_start_address = t_address & ~(defaults::BLOCK_SIZE - 1);
     for (long unsigned int i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
-        line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int)));
+        line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int))); // read block size from memory
     }
 
     // writing new value to line

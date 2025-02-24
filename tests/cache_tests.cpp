@@ -41,7 +41,7 @@ TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
 
  
     if (cache.getReplacementPolicy() == "LRU") {
-        REQUIRE(found_line->m_lru_age == 0);
+        REQUIRE(found_line->m_lru_age == 1);
     }
 
     if (cache.getReplacementPolicy() == "LFU") {
@@ -253,7 +253,7 @@ TEST_CASE("Cache - Associativity Effects", "[cache]") {
     }
 }
 
-TEST_CASE("Cache - Fully Associative Eviction", "[cache]") { // failing
+TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
     Memory memory(memorySize);
     Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
 
@@ -267,10 +267,28 @@ TEST_CASE("Cache - Fully Associative Eviction", "[cache]") { // failing
     cache.write(addr2, 42);
     cache.write(addr3, 42);
     cache.write(addr4, 42);
+    cache.write(addr5, 42);
     REQUIRE(cache.findCacheLine(addr1) != nullptr);
+}
 
-    cache.write(addr5, 99);
-    REQUIRE(cache.findCacheLine(addr1) == nullptr);
+TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
+
+    // fill the cache completely (512 lines)
+    for (int i = 0; i < 512; i++) {
+        uint32_t addr = 0x1000 + (i * 0x1000);
+        cache.write(addr, i);
+    }
+
+    // verify oldest entry is still in the cache before eviction
+    REQUIRE(cache.findCacheLine(0x1000) != nullptr);
+
+    // trigger eviction
+    cache.write(0x900000, 99);
+
+    // 0x1000 should be evicted
+    REQUIRE(cache.findCacheLine(0x1000) == nullptr);
 }
 
 TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
@@ -333,12 +351,146 @@ TEST_CASE("Cache - High Load Access Pattern", "[cache][profiling]") {
 
     for (int i = 0; i < 5000000; i++) {
         cache.write(test_address + (i % 4096) * 4, value);
-        cache.read(test_address + (i % 4096) * 4);
-
+        int retValue = cache.read(test_address + (i % 4096) * 4);
+        REQUIRE(retValue == value);
         if (i % 100 == 0) {
             cache.read(test_address);
         }
     }
 
     REQUIRE(cache.findCacheLine(test_address) != nullptr);
+}
+
+TEST_CASE("Write-Through: Forward Writes to Next Level", "[cache]") {
+    Memory memory(memorySize);
+    Cache L3(64 * 1024, 8, "LRU", "WT", Level::L3, nullptr, memory);
+    Cache L2(32 * 1024, 4, "LRU", "WT", Level::L2, &L3, memory);
+    Cache L1(8 * 1024, 2, "LRU", "WT", Level::L1, &L2, memory);
+
+    uint32_t address = 0x1000;
+    int value = 42;
+
+    // WT should propagate to L2 and L3
+    L1.write(address, value);
+
+    REQUIRE(memory.read(address) == value);
+    REQUIRE(L3.findCacheLine(address) != nullptr);
+    REQUIRE(L2.findCacheLine(address) != nullptr);
+    REQUIRE(L1.findCacheLine(address) != nullptr);
+}
+
+TEST_CASE("FIFO Replacement Across Sets", "[cache]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 4, "FIFO", "WB", L1, nullptr, memory);
+
+    uint32_t addr1 = 0x1000;
+    uint32_t addr2 = 0x2000;
+    uint32_t addr3 = 0x3000;
+    uint32_t addr4 = 0x4000;
+    uint32_t addr5 = 0x5000;
+
+    cache.write(addr1, 42);
+    cache.write(addr2, 42);
+    cache.write(addr3, 42);
+    cache.write(addr4, 42);
+
+    cache.write(addr5, 99);
+    REQUIRE(cache.findCacheLine(addr1) == nullptr); 
+}
+
+TEST_CASE("LFU Tie-Breaking", "[cache]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 4, "LFU", "WB", L1, nullptr, memory);
+
+    uint32_t addr1 = 0x1000;
+    uint32_t addr2 = 0x2000;
+    uint32_t addr3 = 0x3000;
+    uint32_t addr4 = 0x4000;
+    uint32_t addr5 = 0x5000; 
+
+    cache.write(addr1, 42);
+    cache.write(addr2, 42);
+    cache.write(addr3, 42);
+    cache.write(addr4, 42);
+
+    cache.read(addr1);
+    cache.read(addr2);
+    cache.read(addr3);
+    cache.read(addr4);
+
+    cache.write(addr5, 99);
+
+    REQUIRE(cache.findCacheLine(addr1) == nullptr);
+    REQUIRE(cache.findCacheLine(addr2) != nullptr);
+    REQUIRE(cache.findCacheLine(addr3) != nullptr);
+    REQUIRE(cache.findCacheLine(addr4) != nullptr);
+    REQUIRE(cache.findCacheLine(addr5) != nullptr);
+}
+
+TEST_CASE("Multi-Level Cache Read Verification", "[cache]") {
+    Memory memory(memorySize);
+    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
+    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
+    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
+
+    uint32_t address = 0x1000;
+    int value = 42;
+
+    memory.write(address, value);
+
+    int read_value = L1.read(address);
+
+    REQUIRE(read_value == value);
+    REQUIRE(L1.findCacheLine(address) != nullptr);
+    REQUIRE(L2.findCacheLine(address) != nullptr);
+    REQUIRE(L3.findCacheLine(address) != nullptr);
+}
+
+TEST_CASE("Write-Through - High-Load Writes to Cache", "[cache][profiling]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory);
+
+    uint32_t base_addr = 0x1000;
+    int value = 42;
+
+    for (int i = 0; i < 50000; i++) {
+        cache.write(base_addr + ((i % 256) * 4), value + i);
+        REQUIRE(memory.read(base_addr + ((i % 256) * 4)) == value + i); 
+    }
+}
+
+TEST_CASE("Cache - Conflict Eviction with Same Index", "[cache][profiling]") {
+    Memory memory(memorySize);
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+
+    uint32_t addr1 = 0x1000;
+    uint32_t addr2 = addr1 + (8 * 1024); // maps to the same index
+
+    for (int i = 0; i < 10000; i++) {
+        cache.write(addr1, 42);
+        cache.write(addr2, 99);
+
+        REQUIRE(cache.findCacheLine(addr1) != nullptr);
+        REQUIRE(cache.findCacheLine(addr2) != nullptr);
+    }
+}
+
+TEST_CASE("Cache - Random Access Read/Write to Cache", "[cache][profiling]") {
+    Memory memory(memorySize);
+    Cache cache(16 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    
+    std::vector<uint32_t> addresses;
+    std::unordered_map<uint32_t, int> value_map;
+
+    for (int i = 0; i < 20000; i++) {
+        uint32_t addr = (rand() % (16 * 1024)) & ~(defaults::BLOCK_SIZE - 1);
+        int value = rand() % 1000;
+        cache.write(addr, value);
+        value_map[addr] = value;
+        addresses.push_back(addr);
+    }
+
+    for (auto addr : addresses) {
+        REQUIRE(cache.read(addr) == value_map[addr]);
+    }
 }

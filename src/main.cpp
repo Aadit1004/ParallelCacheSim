@@ -14,16 +14,21 @@ int getMemorySize(std::string& t_size) {
 }
 
 int main(int argc, char *argv[]) {
-    ArgParser argParser(argc, argv);
-    if (argParser.validateArguments()) {
-        ValidParams params = argParser.getValidParams();
+    try {
+        ArgParser argParser(argc, argv);
+        if (argParser.validateArguments()) {
+            ValidParams params = argParser.getValidParams();
 
-        int memory_size_bytes = getMemorySize(params.memory_size);
-        Memory memory(memory_size_bytes);
+            int memory_size_bytes = getMemorySize(params.memory_size);
+            Memory memory(memory_size_bytes, params.isVerbose);
 
-        std::cout << "Valid argmunets passed" << std::endl;
-    } else {
-        std::cout << "Invalid argmunets passed" << std::endl;
+            std::cout << "Valid argmunets passed" << std::endl;
+        } else {
+            std::cout << "Invalid argmunets passed" << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }

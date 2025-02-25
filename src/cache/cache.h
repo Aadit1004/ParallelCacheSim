@@ -37,7 +37,7 @@ struct CacheLine {
 class Cache {
 
 public:
-    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory);
+    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, bool isVerbose = false);
     int read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
     CacheLine* findCacheLine(uint32_t t_address);
@@ -72,4 +72,5 @@ private:
     Cache* m_next_level_cache; // pointer to next cache line L1->L2->L3
     Level m_cache_level;
     Memory& m_memory;
+    bool m_isVerbose;
 };

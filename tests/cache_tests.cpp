@@ -5,7 +5,7 @@
 const int memorySize = 4 * 1024 * 1024;
 
 TEST_CASE("Cache Initialization", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     int cache_size = 8 * 1024;
     auto associativity = GENERATE(1, 4, 0);
     Cache cache(cache_size, associativity, "LRU", "WB", L1, nullptr, memory);
@@ -22,7 +22,7 @@ TEST_CASE("Cache Initialization", "[cache]") {
 }
 
 TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     std::string replacementPolicy = GENERATE("LRU", "LFU", "FIFO");
     Cache cache(8 * 1024, 4, replacementPolicy, "WB", L1, nullptr, memory);
 
@@ -70,7 +70,7 @@ TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
 }
 
 TEST_CASE("Cache - Replacement Policies", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     uint32_t addresses[] = {0x1000, 0x2000, 0x3000, 0x4000};
 
     SECTION("FIFO Replacement") {
@@ -131,7 +131,7 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
 }
 
 TEST_CASE("Cache - Write Policy Behavior", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
 
     SECTION("Write-Through: Memory Should Be Updated Immediately") {
         Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory);
@@ -162,7 +162,7 @@ TEST_CASE("Cache - Write Policy Behavior", "[cache]") {
 }
 
 TEST_CASE("Cache - Unaligned Access Should Fail", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t unaligned_address = 0x1003;
@@ -171,7 +171,7 @@ TEST_CASE("Cache - Unaligned Access Should Fail", "[cache]") {
 }
 
 TEST_CASE("Cache - Multi-Level Cache Simulation", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
     Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
     Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
@@ -194,7 +194,7 @@ TEST_CASE("Cache - Multi-Level Cache Simulation", "[cache]") {
 }
 
 TEST_CASE("Cache - Write-Back Dirty Bit Handling", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t address1 = 0x1000;
@@ -220,7 +220,7 @@ TEST_CASE("Cache - Write-Back Dirty Bit Handling", "[cache]") {
 }
 
 TEST_CASE("Cache - Associativity Effects", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
 
     SECTION("Direct-Mapped (Assoc=1)") {
         Cache cache(8 * 1024, 1, "LRU", "WB", L1, nullptr, memory);
@@ -254,7 +254,7 @@ TEST_CASE("Cache - Associativity Effects", "[cache]") {
 }
 
 TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t addr1 = 0x1000;
@@ -272,7 +272,7 @@ TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
 }
 
 TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
 
     // fill the cache completely (512 lines)
@@ -292,7 +292,7 @@ TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
 }
 
 TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
     Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
     Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
@@ -313,7 +313,7 @@ TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
 }
 
 TEST_CASE("Cache - Warm-Up and Retention", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t address = 0x1000;
@@ -330,7 +330,7 @@ TEST_CASE("Cache - Warm-Up and Retention", "[cache][profiling]") {
 }
 
 TEST_CASE("Cache Profiling Test", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t test_address = 0x1000;
@@ -343,7 +343,7 @@ TEST_CASE("Cache Profiling Test", "[cache][profiling]") {
 }
 
 TEST_CASE("Cache - High Load Access Pattern", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t test_address = 0x1000;
@@ -362,7 +362,7 @@ TEST_CASE("Cache - High Load Access Pattern", "[cache][profiling]") {
 }
 
 TEST_CASE("Write-Through: Forward Writes to Next Level", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache L3(64 * 1024, 8, "LRU", "WT", Level::L3, nullptr, memory);
     Cache L2(32 * 1024, 4, "LRU", "WT", Level::L2, &L3, memory);
     Cache L1(8 * 1024, 2, "LRU", "WT", Level::L1, &L2, memory);
@@ -380,7 +380,7 @@ TEST_CASE("Write-Through: Forward Writes to Next Level", "[cache]") {
 }
 
 TEST_CASE("FIFO Replacement Across Sets", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "FIFO", "WB", L1, nullptr, memory);
 
     uint32_t addr1 = 0x1000;
@@ -399,7 +399,7 @@ TEST_CASE("FIFO Replacement Across Sets", "[cache]") {
 }
 
 TEST_CASE("LFU Tie-Breaking", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LFU", "WB", L1, nullptr, memory);
 
     uint32_t addr1 = 0x1000;
@@ -428,7 +428,7 @@ TEST_CASE("LFU Tie-Breaking", "[cache]") {
 }
 
 TEST_CASE("Multi-Level Cache Read Verification", "[cache]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
     Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
     Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
@@ -447,7 +447,7 @@ TEST_CASE("Multi-Level Cache Read Verification", "[cache]") {
 }
 
 TEST_CASE("Write-Through - High-Load Writes to Cache", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory);
 
     uint32_t base_addr = 0x1000;
@@ -460,7 +460,7 @@ TEST_CASE("Write-Through - High-Load Writes to Cache", "[cache][profiling]") {
 }
 
 TEST_CASE("Cache - Conflict Eviction with Same Index", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t addr1 = 0x1000;
@@ -476,7 +476,7 @@ TEST_CASE("Cache - Conflict Eviction with Same Index", "[cache][profiling]") {
 }
 
 TEST_CASE("Cache - Random Access Read/Write to Cache", "[cache][profiling]") {
-    Memory memory(memorySize);
+    Memory memory(memorySize, false);
     Cache cache(16 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
     
     std::vector<uint32_t> addresses;

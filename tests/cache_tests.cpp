@@ -1,6 +1,7 @@
 #include "../catch2/catch.hpp"
 #include "../src/cache/cache.h"
 #include "../src/memory/memory.h"
+#include "../src/exception/cache_exception.h"
 
 const int memorySize = 4 * 1024 * 1024;
 
@@ -166,7 +167,7 @@ TEST_CASE("Cache - Unaligned Access Should Fail", "[cache]") {
     Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
 
     uint32_t unaligned_address = 0x1003;
-    cache.write(unaligned_address, 99);
+    REQUIRE_THROWS_AS(cache.write(unaligned_address, 99), CacheException);
     REQUIRE(cache.findCacheLine(unaligned_address) == nullptr);
 }
 
@@ -272,7 +273,7 @@ TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
 }
 
 TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
-    Memory memory(memorySize, false);
+    Memory memory(8 * memorySize, false);
     Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
 
     // fill the cache completely (512 lines)
@@ -485,12 +486,17 @@ TEST_CASE("Cache - Random Access Read/Write to Cache", "[cache][profiling]") {
     for (int i = 0; i < 20000; i++) {
         uint32_t addr = (rand() % (16 * 1024)) & ~(defaults::BLOCK_SIZE - 1);
         int value = rand() % 1000;
-        cache.write(addr, value);
-        value_map[addr] = value;
-        addresses.push_back(addr);
+        try {
+            cache.write(addr, value); // If write fails, it throws an exception
+            value_map[addr] = value;
+            addresses.push_back(addr);
+        } catch (const CacheException& e) {
+            // ignore invalid addresses
+        }
     }
 
     for (auto addr : addresses) {
+        REQUIRE_NOTHROW(cache.read(addr));
         REQUIRE(cache.read(addr) == value_map[addr]);
     }
 }

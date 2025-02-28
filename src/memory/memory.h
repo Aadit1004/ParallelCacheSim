@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <iostream>
+#include "../exception/cache_exception.h"
 
 class Memory {
 public:

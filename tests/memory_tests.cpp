@@ -1,5 +1,6 @@
 #include "../catch2/catch.hpp"
 #include "../src/memory/memory.h"
+#include "../src/exception/cache_exception.h"
 
 const int memory_size = 4 * 1024 * 1024;
 
@@ -51,24 +52,24 @@ TEST_CASE("Unaligned Memory Access Should Fail", "[memory]") {
     Memory memory(memory_size, false);
 
     uint32_t unaligned_address = 0x1003; // not multiple of 4
-    memory.write(unaligned_address, 77);
-    REQUIRE(memory.read(unaligned_address) == 0);
+    REQUIRE_THROWS_AS(memory.write(unaligned_address, 77), CacheException);
+    REQUIRE_THROWS_AS(memory.read(unaligned_address), CacheException);
 }
 
 TEST_CASE("Memory Access Below Base Address Should Fail", "[memory]") {
     Memory memory(memory_size, false);
 
     uint32_t invalid_address = 0x0FFF; // below base address of 0x1000
-    memory.write(invalid_address, 55);
-    REQUIRE(memory.read(invalid_address) == 0);
+    REQUIRE_THROWS_AS(memory.write(invalid_address, 55), CacheException);
+    REQUIRE_THROWS_AS(memory.read(invalid_address), CacheException);
 }
 
 TEST_CASE("Memory Access Above End Address Should Fail", "[memory]") {
     Memory memory(memory_size, false);
 
     uint32_t invalid_address = 0x1000 + memory_size; // address after allocated memory
-    memory.write(invalid_address, 88);
-    REQUIRE(memory.read(invalid_address) == 0);
+    REQUIRE_THROWS_AS(memory.write(invalid_address, 88), CacheException);
+    REQUIRE_THROWS_AS(memory.read(invalid_address), CacheException);
 }
 
 TEST_CASE("Profiling - Memory Initialization", "[memory][profiling]") {
@@ -107,13 +108,20 @@ TEST_CASE("Profiling - Sequential Memory Reads", "[memory][profiling]") {
 TEST_CASE("Profiling - Random Memory Access", "[memory][profiling]") {
     Memory memory(memory_size, false);
     uint32_t base_address = 0x1000;
+    uint32_t max_valid_address = base_address + memory_size - 4;
 
     for (uint32_t i = 0; i < 100000; i += 4) {
-        memory.write(base_address + (rand() % 100000), i);
+        uint32_t rand_address = base_address + (rand() % (memory_size / 4)) * 4;
+        REQUIRE(rand_address >= base_address);
+        REQUIRE(rand_address <= max_valid_address);
+        memory.write(rand_address, i);
     }
 
     for (uint32_t i = 0; i < 100000; i += 4) {
-        memory.read(base_address + (rand() % 100000));
+        uint32_t rand_address = base_address + (rand() % (memory_size / 4)) * 4;
+        REQUIRE(rand_address >= base_address);
+        REQUIRE(rand_address <= max_valid_address);
+        memory.read(rand_address);
     }
 
     REQUIRE(true);

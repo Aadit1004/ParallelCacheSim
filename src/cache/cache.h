@@ -5,6 +5,7 @@
 #include <cmath>
 #include <climits>
 #include "../memory/memory.h"
+#include "../exception/cache_exception.h"
 
 enum Level {
     L1,

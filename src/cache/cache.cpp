@@ -138,7 +138,8 @@ void Cache::handleEviction(int t_index, int t_tag) {
         }
     }
 
-    std::cerr << "[ERROR] Eviction failed: No available slots after eviction!" << std::endl;
+    if (m_isVerbose) std::cerr << "[ERROR] Eviction failed: No available slots after eviction." << std::endl;
+    throw CacheException("Eviction failed: No available slots after eviction.");
 }
 
 
@@ -206,8 +207,8 @@ void Cache::updateLRU(int t_index, CacheLine* accessedLine) {
 
 int Cache::read(uint32_t t_address) {
     if (t_address % sizeof(int) != 0) {
-        std::cerr << "[ERROR] Unaligned cache read at address 0x" << std::hex << t_address << std::dec << "\n";
-        return 0; // TODO: some invalid value indication ?? throw exception maybe
+        if (m_isVerbose) std::cerr << "[ERROR] Unaligned cache read at address 0x" << std::hex << t_address << std::dec << "\n";
+        throw CacheException("Unaligned cache read.");
     }
 
     if (m_isVerbose) {
@@ -248,10 +249,9 @@ int Cache::read(uint32_t t_address) {
      handleEviction(index, tag); // evict if needed
  
      line = findCacheLine(t_address);
-     if (line == nullptr) { 
-        std::cerr << "[ERROR] Unexpected null cache line after eviction." << std::endl;
-        // throw exception
-        return 0; // safety check
+     if (line == nullptr) { // safety check
+        if (m_isVerbose) std::cerr << "[ERROR] Unexpected null cache line after eviction." << std::endl;
+        throw CacheException("Unexpected null cache line after eviction in cache read.");
     }
  
      // fetch full block from memory
@@ -278,9 +278,8 @@ int Cache::read(uint32_t t_address) {
 
 void Cache::write(uint32_t t_address, int t_value) {
     if (t_address % sizeof(int) != 0) {
-        std::cerr << "[ERROR] Unaligned cache write at address 0x" << std::hex << t_address << std::dec << "\n";
-        // TODO: above will throw an exception
-        return;
+        if (m_isVerbose) std::cerr << "[ERROR] Unaligned cache write at address 0x" << std::hex << t_address << std::dec << "\n";
+        throw CacheException("Unaligned cache write");
     }
     if (m_isVerbose) {
         std::cout << "[WRITE] Address: 0x" << std::hex << t_address
@@ -331,8 +330,8 @@ void Cache::write(uint32_t t_address, int t_value) {
 
     if (line == nullptr) {
         // should never happen, but safety check
-        std::cerr << "[ERROR] Unexpected null cache line after eviction." << std::endl; // will replace to throwing exception
-        return;
+        if (m_isVerbose) std::cerr << "[ERROR] Unexpected null cache line after eviction." << std::endl;
+        throw CacheException("Unexpected null cache line after eviction in cache write.");
     }
 
     // fetch block from memory and store in cache

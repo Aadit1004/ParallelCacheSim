@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Parallel CPU Cache Simulation is a performance-focused simulator designed to model multi-level CPU caching behavior with configurable cache sizes, associativity, replacement policies, and write policies. The simulation supports multi-threaded execution to evaluate cache efficiency under parallel workloads.
+This project is a performance-focused simulator designed to model multi-level CPU caching behavior with configurable cache sizes, associativity, replacement policies, and write policies. The simulation supports multi-threaded execution to evaluate cache efficiency under parallel workloads.
 
 ## Requirements
 

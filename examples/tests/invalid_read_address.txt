@@ -1,0 +1,4 @@
+W 0x1000 42
+R 0x1000
+W 0x2000 99
+R 0x20LF <- invalid address

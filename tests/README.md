@@ -20,12 +20,14 @@ You can run specific categories of tests using Catch2's filtering feature. Use t
 
 ## Available Test Categories
 Here are the valid test categories you can filter with:
-- `[arg_parser]` - Tests related to CLI argument parsing
 - `[cache]` - Cache behavior tests
 - `[memory]` - Tests for memory initialization and read/write operations
+- `[arg_parser]` - Tests related to CLI argument parsing
+- `[io]` - Tests for file manager configuration and validation
 - `[cache_config]` - Tests for cache configuration and validation
-- `[profiling]` - Performance and stress tests for evaluating cache efficiency, eviction behavior, and access patterns under high load.
+- `[profiling]` - All performance and stress tests for evaluating classes under high load.
 - More to come...
+<!-- - `[profiling]` - Performance and stress tests for evaluating cache efficiency, eviction behavior, and access patterns under high load. -->
 
 ## Running a Single Test Case
 To run a specific test case, use its name:

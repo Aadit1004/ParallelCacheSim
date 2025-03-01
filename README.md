@@ -40,7 +40,7 @@ To run the simulator, use:
 ./cache_sim -cache_size <size> -threads <num> -policy <replacement> -assoc <ways> -write_policy <wp> -trace <file> [--verbose]
 
 ```
-**For detailed argument descriptions, refer to the [CLI Arguments Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/src/cli/README.md)**
+**For detailed argument descriptions, refer to the project's [CLI Arguments Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/src/cli/README.md)**
 
 ### Example Usage
 ```bash
@@ -63,7 +63,7 @@ To run specific test categories:
 ./cache_test [cache]
 ./cache_test [profiling]
 ```
-**For detailed testing instructions, refer to the [Testing Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/tests/README.md)**
+**For detailed testing instructions, refer to the project's [Testing Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/tests/README.md)**
 
 <br>
 

@@ -40,12 +40,18 @@ To run the simulator, use:
 ./cache_sim -cache_size <size> -threads <num> -policy <replacement> -assoc <ways> -write_policy <wp> -trace <file> [--verbose]
 
 ```
-**For detailed argument descriptions, refer to the project's [CLI Arguments Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/src/cli/README.md)**
+
+You can use one of the predefined example files located in the `examples/` directory, or create your own memory access file.
+
+**To ensure your custom file follows the correct format, refer to the project's [Memory Access Format Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/src/io/README.md)**
+
 
 ### Example Usage
 ```bash
 ./cache_sim -cache_size medium -threads 4 -policy LRU -assoc 1 -write_policy WB -trace memory_access.txt --verbose
 ```
+
+**For detailed argument descriptions, refer to the project's [CLI Arguments Guide](https://github.com/Aadit1004/ParallelCacheSim/blob/main/src/cli/README.md)**
 <br>
 
 ## Running Tests

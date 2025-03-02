@@ -3,22 +3,21 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  Ts/call  Ts/call  name    
- 20.34      0.12     0.12                             Cache::findCacheLine(unsigned int)
- 13.56      0.20     0.08                             Memory::write(unsigned int, int)
- 11.86      0.27     0.07                             Cache::write(unsigned int, int)
- 11.86      0.34     0.07                             Memory::read(unsigned int)
-  8.47      0.39     0.05                             Cache::updateLRU(int, CacheLine*)
-  6.78      0.43     0.04                             Cache::evictCacheLine(int)
-  6.78      0.47     0.04                             Cache::read(unsigned int)
-  3.39      0.49     0.02                             Catch::AssertionHandler::AssertionHandler(Catch::StringRef const&, Catch::SourceLineInfo const&, Catch::StringRef, Catch::ResultDisposition::Flags)
-  3.39      0.51     0.02                             Catch::StringRef::StringRef(char const*)
-  3.39      0.53     0.02                             Memory::isValidAddress(unsigned int) const
-  1.69      0.54     0.01                             C_A_T_C_H_T_E_S_T_35()
-  1.69      0.55     0.01                             Cache::handleEviction(int, int)
-  1.69      0.56     0.01                             Catch::RunContext::handleExpr(Catch::AssertionInfo const&, Catch::ITransientExpression const&, Catch::AssertionReaction&)
-  1.69      0.57     0.01                             Catch::AssertionHandler::complete()
-  1.69      0.58     0.01                             Catch::getResultCapture()
-  1.69      0.59     0.01                             std::_Hashtable<unsigned int, std::pair<unsigned int const, int>, std::allocator<std::pair<unsigned int const, int> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_rehash(unsigned long, unsigned long const&)
+ 21.15      0.11     0.11                             Cache::findCacheLine(unsigned int)
+ 21.15      0.22     0.11                             Cache::updateLRU(int, CacheLine*)
+ 15.38      0.30     0.08                             Memory::read(unsigned int)
+  9.62      0.35     0.05                             Cache::read(unsigned int)
+  7.69      0.39     0.04                             Memory::write(unsigned int, int)
+  5.77      0.42     0.03                             C_A_T_C_H_T_E_S_T_35()
+  3.85      0.44     0.02                             Catch::getResultCapture()
+  1.92      0.45     0.01                             Cache::evictCacheLine(int)
+  1.92      0.46     0.01                             Cache::handleEviction(int, int)
+  1.92      0.47     0.01                             Cache::write(unsigned int, int)
+  1.92      0.48     0.01                             Catch::RunContext::handleExpr(Catch::AssertionInfo const&, Catch::ITransientExpression const&, Catch::AssertionReaction&)
+  1.92      0.49     0.01                             Catch::AssertionHandler::handleExpr(Catch::ITransientExpression const&)
+  1.92      0.50     0.01                             Catch::AssertionHandler::complete()
+  1.92      0.51     0.01                             std::_Hashtable<unsigned int, std::pair<unsigned int const, int>, std::allocator<std::pair<unsigned int const, int> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_rehash(unsigned long, unsigned long const&)
+  1.92      0.52     0.01                             _init
 
  %         the percentage of the total running time of the
 time       program used by this function.

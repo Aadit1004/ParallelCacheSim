@@ -32,6 +32,7 @@ void FileManager::parseFile() {
     }
     std::string line;
     while (std::getline(file, line)) {
+        line = trim(line);
         if (line.empty()) continue;
         if (m_isVerbose) {
             std::cout << "[FILE] Read line: " << line << std::endl;
@@ -53,10 +54,10 @@ void FileManager::parseFile() {
             uint32_t address = std::stoul(tokens[1], nullptr, 16);
             MemoryRequest request(READ, address);
             m_requests.push(request);
-        } else if (tokens.size() < 3 || tokens[0] == "W") {
-            if (!isValidHexAddress(tokens[1])) {
+        } else if (tokens[0] == "W") {
+            if (tokens.size() < 3 || !isValidHexAddress(tokens[1]) || !isValidInt(tokens[2])) {
                 clearRequests();
-                throw CacheException("[ERROR] Invalid read format: " + line);
+                throw CacheException("[ERROR] Invalid write format: " + line);
             }
             uint32_t address = std::stoul(tokens[1], nullptr, 16);
             int value = std::stoi(tokens[2]);
@@ -85,6 +86,12 @@ bool FileManager::isValidHexAddress(const std::string& address) {
 }
 
 bool FileManager::isValidInt(const std::string& value) {
+    if (value.empty()) return false;
+    size_t start = (value[0] == '-') ? 1 : 0;
+    if (value.find_first_not_of("0123456789", start) != std::string::npos) {
+        return false;
+    }
+
     try {
         int num = std::stoi(value);
         (void)num; // to avoid unused variable warning
@@ -97,4 +104,10 @@ bool FileManager::isValidInt(const std::string& value) {
 void FileManager::clearRequests() {
     std::queue<MemoryRequest> empty;
     std::swap(m_requests, empty);
+}
+
+std::string FileManager::trim(const std::string& str) {
+    size_t start = str.find_first_not_of(" \t\r\n");
+    size_t end = str.find_last_not_of(" \t\r\n");
+    return (start == std::string::npos) ? "" : str.substr(start, end - start + 1);
 }

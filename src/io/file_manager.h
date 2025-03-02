@@ -7,6 +7,7 @@
 #include <sstream>
 #include <filesystem>
 #include <optional>
+#include <algorithm>
 #include "../exception/cache_exception.h"
 
 enum AccessType {
@@ -44,4 +45,5 @@ class FileManager {
         bool isValidHexAddress(const std::string& address);
         bool isValidInt(const std::string& value);
         void clearRequests();
+        std::string trim(const std::string& str);
 };

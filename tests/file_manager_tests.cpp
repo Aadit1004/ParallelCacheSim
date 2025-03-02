@@ -3,20 +3,6 @@
 #include "../src/exception/cache_exception.h"
 
 /*
-test cases to do under [io] and [profiling] category:
-
-- valid W but invalid address
-- valid W but missing address
-- valid W and address but invalid int (it is string / lower than int min / higher than int max)
-- valid W and address but missing int
-- file not existing
-- empty lines between operations (should be valid?)
-- whitespace variations 
-    Test cases where there are extra spaces/tabs between tokens:
-    "R 0x1A3F"
-    " W 0x2B7D 42 "
-- any extra test cases
-
 - unit tests for getNextRequest
 */
 
@@ -92,4 +78,70 @@ TEST_CASE("File Manager - Invalid/Missing Read Addresses", "[io]") {
     REQUIRE(fm.isValidFile());
     REQUIRE_THROWS_AS(fm.parseFile(), CacheException);
     REQUIRE(fm.getNumOperations() == expectedOperations);
+}
+
+TEST_CASE("File Manager - Invalid/Missing Write Addresses", "[io]") {
+    const std::string filename = GENERATE("invalid_write_address.txt", "missing_write_address.txt");
+    FileManager fm(filename, false, true);
+    const int expectedOperations = 0;
+
+    REQUIRE(fm.isValidFile());
+    REQUIRE_THROWS_AS(fm.parseFile(), CacheException);
+    REQUIRE(fm.getNumOperations() == expectedOperations);
+}
+
+TEST_CASE("File Manager - Invalid/Missing Write Value", "[io]") {
+    const std::string filename = GENERATE("invalid_write_value.txt", "missing_write_value.txt");
+    FileManager fm(filename, false, true);
+    const int expectedOperations = 0;
+
+    REQUIRE(fm.isValidFile());
+    REQUIRE_THROWS_AS(fm.parseFile(), CacheException);
+    REQUIRE(fm.getNumOperations() == expectedOperations);
+}
+
+TEST_CASE("File Manager - Valid File with Empty Breaks", "[io]") {
+    const std::string filename = "valid_file_empty_breaks.txt";
+    FileManager fm(filename, false, true);
+    const int expectedOperations = 20;
+
+    REQUIRE(fm.isValidFile());
+    REQUIRE_NOTHROW(fm.parseFile());
+    REQUIRE(fm.getNumOperations() == expectedOperations);
+}
+
+TEST_CASE("File Manager - Valid File with Extra Spaces", "[io]") {
+    const std::string filename = "valid_file_extra_spaces.txt";
+    FileManager fm(filename, false, true);
+    const int expectedOperations = 20;
+
+    REQUIRE(fm.isValidFile());
+    REQUIRE_NOTHROW(fm.parseFile());
+    REQUIRE(fm.getNumOperations() == expectedOperations);
+}
+
+TEST_CASE("File Manager - getNextRequest Test ", "[io]") {
+    const std::string filename = "valid_file_two.txt";
+    FileManager fm(filename, false, true);
+    REQUIRE(fm.isValidFile());
+    REQUIRE_NOTHROW(fm.parseFile());
+    REQUIRE(fm.getNumOperations() == 2);
+
+    std::optional<MemoryRequest> requestOpOne = fm.getNextRequest();
+    REQUIRE(requestOpOne.has_value());
+    MemoryRequest writeOp = requestOpOne.value();
+    REQUIRE(writeOp.type == AccessType::WRITE);
+    REQUIRE(writeOp.address == 0x1000);
+    REQUIRE(writeOp.value == 42);
+    REQUIRE(fm.getNumOperations() == 1);
+
+    std::optional<MemoryRequest> requestOpTwo = fm.getNextRequest();
+    REQUIRE(requestOpTwo.has_value());
+    MemoryRequest readOp = requestOpTwo.value();
+    REQUIRE(readOp.type == AccessType::READ);
+    REQUIRE(readOp.address == 0x1000);
+    REQUIRE(fm.getNumOperations() == 0);
+
+    std::optional<MemoryRequest> requestOpThree = fm.getNextRequest();
+    REQUIRE_FALSE(requestOpThree.has_value()); // it is returning std::nullopt
 }

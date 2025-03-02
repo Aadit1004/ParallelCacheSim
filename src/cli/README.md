@@ -31,6 +31,7 @@ To run the cache simulator, use the following format:
 6. `-trace <file>`
     - Path to the **memory access trace file**.
     - The file **must** be located in the `examples/` directory.
+    - The file **must** be of extension type `.txt`
 
 ## Optional Arguments
 

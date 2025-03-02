@@ -1,5 +1,16 @@
 # Parallel CPU Cache Simulation
 
+## Table of Contents
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Building the Simulator](#building-the-simulator)
+- [Running the Cache Simulator](#running-the-cache-simulator)
+- [Running Tests](#running-tests)
+- [Advanced Usage](#example-usage)
+    - [Running with Gprof (Performance Profiling)](#running-with-gprof-performance-profiling)
+    - [Running with Valgrind (Memory Leak Detection)](#running-with-valgrind-memory-leak-detection)
+    - [Clang-Tidy (Static Analysis & Linting)](#clang-tidy-static-analysis--linting)
+
 ## Overview
 
 This project is a performance-focused simulator designed to model multi-level CPU caching behavior with configurable cache sizes, associativity, replacement policies, and write policies. The simulation supports multi-threaded execution to evaluate cache efficiency under parallel workloads.

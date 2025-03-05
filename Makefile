@@ -18,7 +18,8 @@ PROF_TARGET = cache_sim_prof
 TEST_PROF_TARGET = cache_test_prof
 
 # source files
-SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp $(SRC_DIR)/cache/cache_config.cpp $(SRC_DIR)/cache/cache.cpp $(SRC_DIR)/memory/memory.cpp $(SRC_DIR)/io/file_manager.cpp
+SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp $(SRC_DIR)/cache/cache_config.cpp $(SRC_DIR)/cache/cache.cpp $(SRC_DIR)/memory/memory.cpp $(SRC_DIR)/io/file_manager.cpp 
+SRCS += $(SRC_DIR)/threading/core_manager.cpp $(SRC_DIR)/cache/mesi.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(filter-out $(SRC_DIR)/main.cpp, $(SRCS))) # exclude main.cpp for test build
 
 # test files
@@ -48,13 +49,13 @@ $(BUILD_TEST_DIR)/%.o: $(TEST_DIR)/%.cpp | $(BUILD_TEST_DIR)
 
 # ensures build directory exists before compilation
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/cli $(BUILD_DIR)/cache $(BUILD_DIR)/memory $(BUILD_DIR)/io
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/cli $(BUILD_DIR)/cache $(BUILD_DIR)/memory $(BUILD_DIR)/io $(BUILD_DIR)/threading
 
 $(BUILD_TEST_DIR):
 	mkdir -p $(BUILD_TEST_DIR)
 
 clean:
-	rm -f $(TARGET) $(TEST_TARGET) $(PROF_TARGET) $(TEST_PROF_TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o $(BUILD_DIR)/cache/*.o $(BUILD_DIR)/memory/*.o $(BUILD_DIR)/io/*.o $(BUILD_TEST_DIR)/*.o gmon.out
+	rm -f $(TARGET) $(TEST_TARGET) $(PROF_TARGET) $(TEST_PROF_TARGET) $(BUILD_DIR)/*.o $(BUILD_DIR)/cli/*.o $(BUILD_DIR)/cache/*.o $(BUILD_DIR)/memory/*.o $(BUILD_DIR)/io/*.o $(BUILD_DIR)/threading/*.o $(BUILD_TEST_DIR)/*.o gmon.out
 
 # run Clang-Tidy on all spp files under /src
 TIDY_FLAGS = -checks='clang-analyzer-*,performance-*'

@@ -364,3 +364,22 @@ void Cache::write(uint32_t t_address, int t_value) {
         }
     }
 }
+
+void Cache::flushCache() {
+    for (size_t set_index = 0; set_index < m_cache_sets.size(); set_index++) {
+        for (CacheLine& line : m_cache_sets[set_index]) {
+            if (line.m_valid && line.m_dirty) {
+                uint32_t block_address = (line.m_tag << (m_index_bits + m_offset_bits)) | (set_index << m_offset_bits);
+                if (m_isVerbose) {
+                    std::cout << "[FLUSH] Writing dirty cache line to memory | Address Range: 0x"
+                              << std::hex << block_address << " - 0x" 
+                              << (block_address + defaults::BLOCK_SIZE) << std::dec << std::endl;
+                }
+                for (size_t i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
+                    m_memory.write(block_address + (i * sizeof(int)), line.m_data[i]);
+                }
+                line.m_dirty = false;
+            }
+        }
+    }
+}

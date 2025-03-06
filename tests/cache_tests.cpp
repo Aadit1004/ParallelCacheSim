@@ -8,8 +8,9 @@ const int memorySize = 4 * 1024 * 1024;
 TEST_CASE("Cache Initialization", "[cache]") {
     Memory memory(memorySize, false);
     int cache_size = 8 * 1024;
+    CacheStats stats;
     auto associativity = GENERATE(1, 4, 0);
-    Cache cache(cache_size, associativity, "LRU", "WB", L1, nullptr, memory);
+    Cache cache(cache_size, associativity, "LRU", "WB", L1, nullptr, memory, &stats);
     
     int expected_offset_bits = static_cast<int>(log2(defaults::BLOCK_SIZE));
     int num_sets = (associativity == 0) ? 1 : (8 * 1024) / (defaults::BLOCK_SIZE * associativity);
@@ -24,8 +25,9 @@ TEST_CASE("Cache Initialization", "[cache]") {
 
 TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
     Memory memory(memorySize, false);
+    CacheStats stats;
     std::string replacementPolicy = GENERATE("LRU", "LFU", "FIFO");
-    Cache cache(8 * 1024, 4, replacementPolicy, "WB", L1, nullptr, memory);
+    Cache cache(8 * 1024, 4, replacementPolicy, "WB", L1, nullptr, memory, &stats);
 
     uint32_t test_address = 0x1000;
     int expected_tag = test_address >> (cache.getOffsetBits() + cache.getIndexBits());
@@ -72,10 +74,11 @@ TEST_CASE("Cache - findCacheLine() behavior", "[cache]") {
 
 TEST_CASE("Cache - Replacement Policies", "[cache]") {
     Memory memory(memorySize, false);
+    CacheStats stats;
     uint32_t addresses[] = {0x1000, 0x2000, 0x3000, 0x4000};
 
     SECTION("FIFO Replacement") {
-        Cache cache(8 * 1024, 2, "FIFO", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "FIFO", "WB", L1, nullptr, memory, &stats);
 
         // fill cache
         for (auto addr : addresses) {
@@ -88,7 +91,7 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
     }
 
     SECTION("LRU Replacement") {
-        Cache cache(8 * 1024, 2, "LRU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "LRU", "WB", L1, nullptr, memory, &stats);
 
         // fill cache
         for (auto addr : addresses) {
@@ -109,7 +112,7 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
     }
 
     SECTION("LFU Replacement") {
-        Cache cache(8 * 1024, 2, "LFU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "LFU", "WB", L1, nullptr, memory, &stats);
 
         // fill cache
         for (auto addr : addresses) {
@@ -133,9 +136,10 @@ TEST_CASE("Cache - Replacement Policies", "[cache]") {
 
 TEST_CASE("Cache - Write Policy Behavior", "[cache]") {
     Memory memory(memorySize, false);
+    CacheStats stats;
 
     SECTION("Write-Through: Memory Should Be Updated Immediately") {
-        Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory);
+        Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory, &stats);
 
         uint32_t address = 0x1000;
         int value = 42;
@@ -145,7 +149,7 @@ TEST_CASE("Cache - Write Policy Behavior", "[cache]") {
     }
 
     SECTION("Write-Back: Memory Should Update Only on Eviction") {
-        Cache cache(8 * 1024, 2, "LRU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 2, "LRU", "WB", L1, nullptr, memory, &stats);
 
         uint32_t address = 0x1000;
         int value = 42;
@@ -164,7 +168,8 @@ TEST_CASE("Cache - Write Policy Behavior", "[cache]") {
 
 TEST_CASE("Cache - Unaligned Access Should Fail", "[cache]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t unaligned_address = 0x1003;
     REQUIRE_THROWS_AS(cache.write(unaligned_address, 99), CacheException);
@@ -173,9 +178,10 @@ TEST_CASE("Cache - Unaligned Access Should Fail", "[cache]") {
 
 TEST_CASE("Cache - Multi-Level Cache Simulation", "[cache]") {
     Memory memory(memorySize, false);
-    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
-    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
-    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
+    CacheStats stats;
+    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory, &stats);
+    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory, &stats);
+    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory, &stats);
 
     uint32_t address = 0x1000;
     int value = 42;
@@ -196,7 +202,8 @@ TEST_CASE("Cache - Multi-Level Cache Simulation", "[cache]") {
 
 TEST_CASE("Cache - Write-Back Dirty Bit Handling", "[cache]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t address1 = 0x1000;
     uint32_t address2 = 0x2000;
@@ -222,9 +229,10 @@ TEST_CASE("Cache - Write-Back Dirty Bit Handling", "[cache]") {
 
 TEST_CASE("Cache - Associativity Effects", "[cache]") {
     Memory memory(memorySize, false);
+    CacheStats stats;
 
     SECTION("Direct-Mapped (Assoc=1)") {
-        Cache cache(8 * 1024, 1, "LRU", "WB", L1, nullptr, memory);
+        Cache cache(8 * 1024, 1, "LRU", "WB", L1, nullptr, memory, &stats);
         uint32_t addr1 = 0x1000;
         uint32_t addr2 = addr1 + (8 * 1024);
 
@@ -235,8 +243,8 @@ TEST_CASE("Cache - Associativity Effects", "[cache]") {
         REQUIRE(cache.findCacheLine(addr1) == nullptr);
     }
 
-    SECTION("4-Way Set-Associative (Assoc=4)") { // failing
-        Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    SECTION("4-Way Set-Associative (Assoc=4)") {
+        Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
         uint32_t addr1 = 0x1000;
         uint32_t addr2 = addr1 + (8 * 1024);
         uint32_t addr3 = addr2 + (8 * 1024);
@@ -256,7 +264,8 @@ TEST_CASE("Cache - Associativity Effects", "[cache]") {
 
 TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t addr1 = 0x1000;
     uint32_t addr2 = 0x2000;
@@ -274,7 +283,8 @@ TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
 
 TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
     Memory memory(8 * memorySize, false);
-    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory, &stats);
 
     // fill the cache completely (512 lines)
     for (int i = 0; i < 512; i++) {
@@ -294,9 +304,10 @@ TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
 
 TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
     Memory memory(memorySize, false);
-    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
-    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
-    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
+    CacheStats stats;
+    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory, &stats);
+    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory, &stats);
+    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory, &stats);
 
     uint32_t address = 0x1000;
     int value = 42;
@@ -315,7 +326,8 @@ TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
 
 TEST_CASE("Cache - Warm-Up and Retention", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t address = 0x1000;
     int value = 42;
@@ -332,7 +344,8 @@ TEST_CASE("Cache - Warm-Up and Retention", "[cache][profiling]") {
 
 TEST_CASE("Cache Profiling Test", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t test_address = 0x1000;
     int value = 42;
@@ -345,7 +358,8 @@ TEST_CASE("Cache Profiling Test", "[cache][profiling]") {
 
 TEST_CASE("Cache - High Load Access Pattern", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t test_address = 0x1000;
     int value = 42;
@@ -364,9 +378,10 @@ TEST_CASE("Cache - High Load Access Pattern", "[cache][profiling]") {
 
 TEST_CASE("Write-Through: Forward Writes to Next Level", "[cache]") {
     Memory memory(memorySize, false);
-    Cache L3(64 * 1024, 8, "LRU", "WT", Level::L3, nullptr, memory);
-    Cache L2(32 * 1024, 4, "LRU", "WT", Level::L2, &L3, memory);
-    Cache L1(8 * 1024, 2, "LRU", "WT", Level::L1, &L2, memory);
+    CacheStats stats;
+    Cache L3(64 * 1024, 8, "LRU", "WT", Level::L3, nullptr, memory, &stats);
+    Cache L2(32 * 1024, 4, "LRU", "WT", Level::L2, &L3, memory, &stats);
+    Cache L1(8 * 1024, 2, "LRU", "WT", Level::L1, &L2, memory, &stats);
 
     uint32_t address = 0x1000;
     int value = 42;
@@ -382,7 +397,8 @@ TEST_CASE("Write-Through: Forward Writes to Next Level", "[cache]") {
 
 TEST_CASE("FIFO Replacement Across Sets", "[cache]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "FIFO", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "FIFO", "WB", L1, nullptr, memory, &stats);
 
     uint32_t addr1 = 0x1000;
     uint32_t addr2 = 0x2000;
@@ -401,7 +417,8 @@ TEST_CASE("FIFO Replacement Across Sets", "[cache]") {
 
 TEST_CASE("LFU Tie-Breaking", "[cache]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LFU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LFU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t addr1 = 0x1000;
     uint32_t addr2 = 0x2000;
@@ -430,9 +447,10 @@ TEST_CASE("LFU Tie-Breaking", "[cache]") {
 
 TEST_CASE("Multi-Level Cache Read Verification", "[cache]") {
     Memory memory(memorySize, false);
-    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory);
-    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory);
-    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory);
+    CacheStats stats;
+    Cache L3(64 * 1024, 8, "LRU", "WB", Level::L3, nullptr, memory, &stats);
+    Cache L2(32 * 1024, 4, "LRU", "WB", Level::L2, &L3, memory, &stats);
+    Cache L1(8 * 1024, 2, "LRU", "WB", Level::L1, &L2, memory, &stats);
 
     uint32_t address = 0x1000;
     int value = 42;
@@ -449,7 +467,8 @@ TEST_CASE("Multi-Level Cache Read Verification", "[cache]") {
 
 TEST_CASE("Write-Through - High-Load Writes to Cache", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WT", L1, nullptr, memory, &stats);
 
     uint32_t base_addr = 0x1000;
     int value = 42;
@@ -462,7 +481,8 @@ TEST_CASE("Write-Through - High-Load Writes to Cache", "[cache][profiling]") {
 
 TEST_CASE("Cache - Conflict Eviction with Same Index", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(8 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
 
     uint32_t addr1 = 0x1000;
     uint32_t addr2 = addr1 + (8 * 1024); // maps to the same index
@@ -478,7 +498,8 @@ TEST_CASE("Cache - Conflict Eviction with Same Index", "[cache][profiling]") {
 
 TEST_CASE("Cache - Random Access Read/Write to Cache", "[cache][profiling]") {
     Memory memory(memorySize, false);
-    Cache cache(16 * 1024, 4, "LRU", "WB", L1, nullptr, memory);
+    CacheStats stats;
+    Cache cache(16 * 1024, 4, "LRU", "WB", L1, nullptr, memory, &stats);
     
     std::vector<uint32_t> addresses;
     std::unordered_map<uint32_t, int> value_map;

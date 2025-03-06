@@ -40,27 +40,30 @@ struct CacheStats {
     int total_operations = 0;
     int read_operations = 0;
     int write_operations = 0;
-    int cache_hits = 0;
-    int cache_misses = 0;
-    int read_hits = 0;
-    int write_hits = 0;
-    int read_misses = 0;
-    int write_misses = 0;
+
+    int l1_hits = 0, l1_misses = 0;
+    int l2_hits = 0, l2_misses = 0;
+    int l3_hits = 0, l3_misses = 0;
+
     int evictions = 0;
     int dirty_evictions = 0;
     int memory_accesses = 0;
+
+    CacheStats() = default;
 
     void printSummary() const {
         std::cout << "\n===== Cache Simulation Summary =====\n";
         std::cout << "Total Operations: " << total_operations << "\n";
         std::cout << "Read Operations: " << read_operations << "\n";
         std::cout << "Write Operations: " << write_operations << "\n";
-        std::cout << "Cache Hits: " << cache_hits << " (" << (100.0 * cache_hits / total_operations) << "%)\n";
-        std::cout << "Cache Misses: " << cache_misses << " (" << (100.0 * cache_misses / total_operations) << "%)\n";
-        std::cout << "Read Hits: " << read_hits << "\n";
-        std::cout << "Write Hits: " << write_hits << "\n";
-        std::cout << "Read Misses: " << read_misses << "\n";
-        std::cout << "Write Misses: " << write_misses << "\n";
+
+        std::cout << "L1 Hits: " << l1_hits << " (" << (100.0 * l1_hits / total_operations) << "%)\n";
+        std::cout << "L1 Misses: " << l1_misses << "\n";
+        std::cout << "L2 Hits: " << l2_hits << "\n";
+        std::cout << "L2 Misses: " << l2_misses << "\n";
+        std::cout << "L3 Hits: " << l3_hits << "\n";
+        std::cout << "L3 Misses: " << l3_misses << "\n";
+
         std::cout << "Evictions: " << evictions << "\n";
         std::cout << "Dirty Evictions: " << dirty_evictions << "\n";
         std::cout << "Memory Accesses: " << memory_accesses << "\n";
@@ -71,7 +74,7 @@ struct CacheStats {
 class Cache {
 
 public:
-    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, bool isVerbose = false);
+    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose = false);
     int read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
     CacheLine* findCacheLine(uint32_t t_address);
@@ -107,5 +110,6 @@ private:
     Cache* m_next_level_cache; // pointer to next cache line L1->L2->L3
     Level m_cache_level;
     Memory& m_memory;
+    CacheStats* m_stats;
     bool m_isVerbose;
 };

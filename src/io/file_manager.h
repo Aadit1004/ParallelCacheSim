@@ -27,6 +27,7 @@ struct MemoryRequest {
 class FileManager {
     public:
         FileManager(const std::string& filename, bool isVerbose = false, bool isTest = false);
+        ~FileManager();
     
         bool isValidFile() const;
         void parseFile();

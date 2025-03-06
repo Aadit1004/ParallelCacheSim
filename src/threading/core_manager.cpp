@@ -1,26 +1,37 @@
 #include "core_manager.h"
 
-CoreManager::CoreManager(int t_num_threads, ValidParams* t_params, FileManager* t_fm, Memory& t_memory,  bool t_isVerbose) : 
-    num_threads(t_num_threads), params(t_params), fm(t_fm), memory(t_memory), isVerbose(t_isVerbose) {
+CoreManager::CoreManager(int t_num_threads, ValidParams* t_params, FileManager* t_fm, Memory& t_memory,  bool t_isVerbose, CacheStats* t_stats) : 
+    num_threads(t_num_threads), params(t_params), fm(t_fm), memory(t_memory), isVerbose(t_isVerbose), m_stats(t_stats) {
+    if (num_threads < 2 || num_threads % 2 != 0) {
+        throw std::runtime_error("CoreManager: num_threads must be even and >= 2.");
+    }
     threads.resize(num_threads);
 
-    L3_caches.resize(num_threads / 4, nullptr);
+    L3_caches.resize(std::max((num_threads + 3) / 4, 1), nullptr);
     for (size_t i = 0; i < L3_caches.size(); i++) {
-        L3_caches[i] = new Cache(params->l3_cache_size, params->associativity, params->replacement_policy, params->write_policy, L3, nullptr, memory, params->isVerbose);
+        L3_caches[i] = new Cache(params->l3_cache_size, params->associativity, params->replacement_policy, params->write_policy, L3, nullptr, memory, m_stats, params->isVerbose);
     }
     if (isVerbose) {
         std::cout << "[Core Manager] Initialized " << L3_caches.size() << " L3 Caches" << std::endl;
     }
-    L2_caches.resize(num_threads / 2, nullptr);
+    L2_caches.resize(std::max(num_threads / 2, 1), nullptr);
     for (size_t j = 0; j < L2_caches.size(); j++) {
-        L2_caches[j] = new Cache(params->l2_cache_size, params->associativity, params->replacement_policy, params->write_policy, L2, L3_caches[j/2], memory, params->isVerbose);
+        int l3_index = j / 2;
+        if (l3_index >= L3_caches.size()) {
+            throw std::runtime_error("CoreManager: L3 cache index out of bounds.");
+        }
+        L2_caches[j] = new Cache(params->l2_cache_size, params->associativity, params->replacement_policy, params->write_policy, L2, L3_caches[j/2], memory, m_stats, params->isVerbose);
     }
     if (isVerbose) {
         std::cout << "[Core Manager] Initialized " << L2_caches.size() << " L2 Caches" << std::endl;
     }
     L1_caches.resize(num_threads, nullptr);
     for (size_t k = 0; k < L1_caches.size(); k++) {
-        L1_caches[k] = new Cache(params->l1_cache_size, params->associativity, params->replacement_policy, params->write_policy, L1, L2_caches[k/2], memory, params->isVerbose);
+        int l2_index = k / 2;
+        if (l2_index >= L2_caches.size()) {
+            throw std::runtime_error("CoreManager: L2 cache index out of bounds.");
+        }
+        L1_caches[k] = new Cache(params->l1_cache_size, params->associativity, params->replacement_policy, params->write_policy, L1, L2_caches[k/2], memory, m_stats, params->isVerbose);
     }
     if (isVerbose) {
         std::cout << "[Core Manager] Initialized " << L1_caches.size() << " L1 Caches" << std::endl;

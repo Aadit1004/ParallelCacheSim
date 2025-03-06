@@ -13,7 +13,7 @@
 // 4 = 4-Way Set-Associative
 // 0 = fully associative
 Cache::Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, 
-    std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, bool isVerbose) 
+    std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose) 
     : m_replacement_policy(std::move(t_replacement_policy)),
     m_cache_size(t_cache_size),
     m_associativity(t_associativity),
@@ -26,6 +26,7 @@ Cache::Cache(int t_cache_size, int t_associativity, std::string t_replacement_po
     m_next_level_cache(t_next_level),
     m_cache_level(t_cache_level),
     m_memory(t_memory),
+    m_stats(t_stats),
     m_isVerbose(isVerbose)
     {
     if (m_associativity == 0) {
@@ -94,13 +95,16 @@ void Cache::forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value) 
         }
         if (t_isWrite) {
             m_memory.write(t_address, t_value);
+            m_stats->memory_accesses++;
         } else {
             m_memory.read(t_address); // read (no actual effect since memory isn't simulated so do nothing with value)
+            m_stats->memory_accesses++;
         }
     }
 }
 
 void Cache::handleEviction(int t_index, int t_tag) {
+    m_stats->evictions++;
     for (CacheLine& line : m_cache_sets[t_index]) {
         if (!line.m_valid) {  // found an invalid (empty) line
             line.m_tag = t_tag;
@@ -182,9 +186,11 @@ void Cache::evictCacheLine(int t_index) {
     }
 
     if (evicted_line.m_valid && evicted_line.m_dirty && m_write_policy == "WB") {
+        m_stats->dirty_evictions++;
         uint32_t block_address = (evicted_line.m_tag << (m_index_bits + m_offset_bits)) | (t_index << m_offset_bits);
         for (size_t i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
             m_memory.write(block_address + (i * sizeof(int)), evicted_line.m_data[i]);
+            m_stats->memory_accesses++;
         }
         evicted_line.m_dirty = false;
     }
@@ -215,6 +221,11 @@ int Cache::read(uint32_t t_address) {
         std::cout << "[READ] Address: 0x" << std::hex << t_address << std::dec << std::endl;
     }
 
+    if (m_cache_level == Level::L1) {
+        m_stats->total_operations++;
+        m_stats->read_operations++;
+    }
+
     int index = extractIndex(t_address);
      int tag = extractTag(t_address);
 
@@ -229,6 +240,13 @@ int Cache::read(uint32_t t_address) {
                       << " | Index: " << index << " | Offset: " << value_offset 
                       << " | Value: " << retrieved_value << std::dec << std::endl;
         }
+        if (m_cache_level == Level::L1) {
+            m_stats->l1_hits++;
+        } else if (m_cache_level == Level::L2) {
+            m_stats->l2_hits++;
+        } else if (m_cache_level == Level::L3) {
+            m_stats->l3_hits++;
+        }
 
         if (m_replacement_policy == "LRU") {
             updateLRU((m_associativity == 0) ? 0 : index, line);
@@ -241,6 +259,13 @@ int Cache::read(uint32_t t_address) {
     if (m_isVerbose) {
         std::cout << "[CACHE MISS] Address: 0x" << std::hex << t_address 
                   << " | Tag: " << tag << " | Index: " << index << std::dec << std::endl;
+    }
+    if (m_cache_level == Level::L1) {
+        m_stats->l1_misses++;
+    } else if (m_cache_level == Level::L2) {
+        m_stats->l2_misses++;
+    } else if (m_cache_level == Level::L3) {
+        m_stats->l3_misses++;
     }
 
     forwardToNextLevel(t_address, false);
@@ -258,6 +283,7 @@ int Cache::read(uint32_t t_address) {
      uint32_t block_start_address = t_address & ~(defaults::BLOCK_SIZE - 1);
      for (long unsigned int i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
          line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int)));
+         m_stats->memory_accesses++;
      }
 
      if (m_isVerbose) {
@@ -286,6 +312,11 @@ void Cache::write(uint32_t t_address, int t_value) {
         << " | Value: " << t_value << std::dec << std::endl;
     }
 
+    if (m_cache_level == Level::L1) {
+        m_stats->total_operations++;
+        m_stats->write_operations++;
+    }
+
     int index = extractIndex(t_address);
     int tag = extractTag(t_address);
 
@@ -298,6 +329,13 @@ void Cache::write(uint32_t t_address, int t_value) {
             std::cout << "[CACHE HIT] Value updated at Index: " << index 
             << " | Offset: " << word_offset << " | New Value: " << t_value << std::endl;
         }
+        if (m_cache_level == Level::L1) {
+            m_stats->l1_hits++;
+        } else if (m_cache_level == Level::L2) {
+            m_stats->l2_hits++;
+        } else if (m_cache_level == Level::L3) {
+            m_stats->l3_hits++;
+        }
 
         if (m_write_policy == "WB") {
             line->m_dirty = true; // mark as modified for Write-Back
@@ -306,6 +344,7 @@ void Cache::write(uint32_t t_address, int t_value) {
             }
         } else { // WT
             m_memory.write(t_address, t_value); // WT writes immediately to memory
+            m_stats->memory_accesses++;
             forwardToNextLevel(t_address, true, t_value);
             if (m_isVerbose) {
                 std::cout << "[WRITE THROUGH] Value written to memory at address: 0x" 
@@ -323,6 +362,13 @@ void Cache::write(uint32_t t_address, int t_value) {
         std::cout << "[CACHE MISS] Address: 0x" << std::hex << t_address 
                   << " | Tag: " << tag << " | Index: " << index << std::dec << std::endl;
     }
+    if (m_cache_level == Level::L1) {
+        m_stats->l1_misses++;
+    } else if (m_cache_level == Level::L2) {
+        m_stats->l2_misses++;
+    } else if (m_cache_level == Level::L3) {
+        m_stats->l3_misses++;
+    }
 
     // cache miss: get block from memory
     handleEviction(index, tag);
@@ -338,6 +384,7 @@ void Cache::write(uint32_t t_address, int t_value) {
     uint32_t block_start_address = t_address & ~(defaults::BLOCK_SIZE - 1);
     for (long unsigned int i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
         line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int))); // read block size from memory
+        m_stats->memory_accesses++;
     }
 
     // writing new value to line
@@ -357,6 +404,7 @@ void Cache::write(uint32_t t_address, int t_value) {
         }
     } else { // WT
         m_memory.write(t_address, t_value);
+        m_stats->memory_accesses++;
         forwardToNextLevel(t_address, true, t_value);
         if (m_isVerbose) {
             std::cout << "[WRITE THROUGH] Value written to memory at address: 0x" 
@@ -377,6 +425,7 @@ void Cache::flushCache() {
                 }
                 for (size_t i = 0; i < defaults::BLOCK_SIZE / sizeof(int); i++) {
                     m_memory.write(block_address + (i * sizeof(int)), line.m_data[i]);
+                    m_stats->memory_accesses++;
                 }
                 line.m_dirty = false;
             }

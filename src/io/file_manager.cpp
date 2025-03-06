@@ -2,6 +2,11 @@
 
 FileManager::FileManager(const std::string& filename, bool isVerbose, bool isTest) : m_filename(filename), m_isVerbose(isVerbose), m_isTest(isTest) {}
 
+FileManager::~FileManager() {
+    clearRequests();
+    
+}
+
 bool FileManager::fileExists(const std::string& path) const {
     return std::filesystem::exists(path);
 }

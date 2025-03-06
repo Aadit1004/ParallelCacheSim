@@ -5,6 +5,11 @@ ArgParser::ArgParser(int t_argc, char *t_argv[]) : m_argc(t_argc - 1) {
         m_argument.emplace_back(t_argv[i]);
     }
 }
+
+ArgParser::~ArgParser() {
+    m_argument.clear();
+}
+
 // EXAMPLE: ./cache_sim -cache_size medium -threads 4 -policy LRU -assoc 1 -write_policy WB -trace memory_access.txt --verbose
 bool ArgParser::validateArguments() {
     if (m_argc != 12 && m_argc != 13) {

@@ -15,10 +15,10 @@ int getMemorySize(std::string& t_size) {
     }
 }
 
-void handleSingleThread(ValidParams& params, Memory& memory, FileManager& fm) {
-    Cache* L3_cache = new Cache(params.l3_cache_size, params.associativity, params.replacement_policy, params.write_policy, L3, nullptr, memory, params.isVerbose);
-    Cache* L2_cache = new Cache(params.l2_cache_size, params.associativity, params.replacement_policy, params.write_policy, L2, L3_cache, memory, params.isVerbose);
-    Cache* L1_cache = new Cache(params.l1_cache_size, params.associativity, params.replacement_policy, params.write_policy, L1, L2_cache, memory, params.isVerbose);
+void handleSingleThread(ValidParams& params, Memory& memory, FileManager& fm, CacheStats* stats) {
+    Cache* L3_cache = new Cache(params.l3_cache_size, params.associativity, params.replacement_policy, params.write_policy, L3, nullptr, memory, stats, params.isVerbose);
+    Cache* L2_cache = new Cache(params.l2_cache_size, params.associativity, params.replacement_policy, params.write_policy, L2, L3_cache, memory, stats, params.isVerbose);
+    Cache* L1_cache = new Cache(params.l1_cache_size, params.associativity, params.replacement_policy, params.write_policy, L1, L2_cache, memory, stats, params.isVerbose);
     while (fm.getNumOperations() != 0) {
         std::optional<MemoryRequest> opt_request = fm.getNextRequest();
         if (opt_request.has_value()) {
@@ -57,8 +57,10 @@ int main(int argc, char *argv[]) {
             FileManager fm(params.access_file_name, params.isVerbose);
             if (fm.isValidFile()) {
                 fm.parseFile();
+                CacheStats stats;
                 if (params.num_threads == 1) {
-                    handleSingleThread(params, memory, fm);
+                    handleSingleThread(params, memory, fm, &stats);
+                    stats.printSummary();
                 } else {
                     // use CoreManager, MESI, and call CoreManager::startSimulation()
                 }
@@ -72,6 +74,7 @@ int main(int argc, char *argv[]) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "\n===== Cache Simulation Complete =====";
+    
+    std::cout << "\n===== Cache Simulation Complete =====" << std::endl;
     return EXIT_SUCCESS;
 }

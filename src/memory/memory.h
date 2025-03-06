@@ -7,6 +7,7 @@
 class Memory {
 public:
     Memory(int memory_size, bool isVerbose);
+    ~Memory();
     
     int read(uint32_t address);
     void write(uint32_t address, int value);

@@ -1,9 +1,13 @@
 #include "memory.h"
 
 Memory::Memory(int memory_size, bool isVerbose) : m_memory_size(memory_size), endAddress(baseAddress + memory_size - 4), m_isVerbose(isVerbose) {
-    std::cout << "MEMORY Initialized | Range: 0x" << std::hex << baseAddress 
+    if (m_isVerbose) std::cout << "MEMORY Initialized | Range: 0x" << std::hex << baseAddress 
               << " - 0x" << endAddress 
               << " | Size: " << std::dec << memory_size / (1024 * 1024) << " MB" << std::endl;
+}
+
+Memory::~Memory() {
+    m_memory.clear();
 }
 
 int Memory::read(uint32_t address) {

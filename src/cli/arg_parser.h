@@ -20,6 +20,7 @@ struct ValidParams {
 class ArgParser {
 public:
     ArgParser(int t_argc, char *t_argv[]);
+    ~ArgParser();
 
     bool validateArguments();
     ValidParams getValidParams();

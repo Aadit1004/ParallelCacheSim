@@ -12,9 +12,9 @@ To run the cache simulator, use the following format:
     - Defines the cache size.
     - Must be one of: `small`, `medium`, or `large`
     - Cache size configurations:
-        - **Small**: L1 = **8KB**, L2 = **32KB**, L3 = **256KB**, Memory = **4MB**
-        - **Medium**: L1 = **16KB**, L2 = **64KB**, L3 = **512KB**, Memory = **16MB**
-        - **Large**: L1 = **32KB**, L2 = **128KB**, L3 = **1MB**, Memory = **64MB**
+        - **Small**: L1 = **16KB**, L2 = **128KB**, L3 = **512KB**, Memory = **4MB**
+        - **Medium**: L1 = **64KB**, L2 = **512KB**, L3 = **4MB**, Memory = **16MB**
+        - **Large**: L1 = **512KB**, L2 = **2MB**, L3 = **8MB**, Memory = **64MB**
 2. `-threads <num>`
     - Number of threads used for simulation.
     - Valid range: 1 to 16.
@@ -24,7 +24,7 @@ To run the cache simulator, use the following format:
     - Must be one of: `FIFO`, `LRU`, or `LFU`.
 4. `-assoc <ways>`
     - Cache associativity.
-    - Must be one of: `1` (Direct-mapped), `4` (4-Way Set-Associative), or `0` (Fully Associative).
+    - Must be one of: `1` (Direct-mapped), `4` (4-Way Set-Associative), `8` (8-Way Set-Associative), or `0` (Fully Associative).
 5. `-write_policy <wp>`
     - Defines write policy.
     - Must be one of: `WB` (Write-Back) or `WT` (Write-Through).

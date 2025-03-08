@@ -1,7 +1,8 @@
-# Parallel CPU Cache Simulation
+# Parallel CPU D-Cache Simulation
 
 ## Table of Contents
 - [Overview](#overview)
+- [Features](#features)
 - [Requirements](#requirements)
 - [Building the Simulator](#building-the-simulator)
 - [Running the Cache Simulator](#running-the-cache-simulator)
@@ -10,10 +11,17 @@
     - [Running with Gprof (Performance Profiling)](#running-with-gprof-performance-profiling)
     - [Running with Valgrind (Memory Leak Detection)](#running-with-valgrind-memory-leak-detection)
     - [Clang-Tidy (Static Analysis & Linting)](#clang-tidy-static-analysis--linting)
+- [Sources](#sources)
 
 ## Overview
 
-This project is a performance-focused simulator designed to model multi-level CPU caching behavior with configurable cache sizes, associativity, replacement policies, and write policies. The simulation supports multi-threaded execution to evaluate cache efficiency under parallel workloads.
+This project is a performance-focused simulator designed to model multi-level data caching (D-Cache) behavior in CPUs, with configurable cache sizes, associativity, replacement policies, and write policies. The simulation supports multi-threaded execution to evaluate cache efficiency under parallel workloads.
+
+## Features
+
+This simulator supports configurable cache and memory sizes, allowing for realistic CPU caching behavior analysis. Each cache block is 64 bytes, and the associativity options include direct-mapped, fully associative, 4-way, and 8-way set associative configurations. It implements FIFO (First-In-First-Out), LRU (Least Recently Used), and LFU (Least Frequently Used) replacement policies, providing flexibility in cache management strategies. 
+
+Both Write-Back (WB) and Write-Through (WT) write policies are supported to simulate different memory consistency models. The simulator runs in single-threaded mode or can scale up to 16 threads for parallel workload simulations. Additionally, verbose logging is available for detailed execution insights but is not recommended for large memory access files.
 
 ## Requirements
 
@@ -123,3 +131,14 @@ To run Clang-Tidy on all source files and automatically apply fixes:
 make tidy
 ```
 This will apply performance and static analysis checks to improve code quality.
+
+### Sources
+
+- [UCSD - The Basics of Cache](https://cseweb.ucsd.edu/classes/su07/cse141/cache-handout.pdf)
+- [Wikipedia - CPU Cache](https://en.wikipedia.org/wiki/CPU_cache#:~:text=A%20CPU%20cache%20is%20a,levels%20are%20implemented%20with%20eDRAM)
+- [University of Pittsburgh - The MESI protocol](https://people.cs.pitt.edu/~melhem/courses/2410p/ch5-4.pdf)
+- [Wikipedia - MESI protocol](https://en.wikipedia.org/wiki/MESI_protocol)
+- [How Cache Works Inside a CPU](https://youtu.be/zF4VMombo7U?si=G-msyXsnpYtLq48j)
+- [L11 4 how caches work](https://youtu.be/_ENicOgC6ks?si=bBfXUD2Mqr_tyQRU)
+- [What is Cache Memory? L1, L2, and L3 Cache Memory Explained](https://youtu.be/IA8au8Qr3lo?si=ykWy38Rrrpg9UaBS)
+- [Cache Memory - Ben Lutkevich](https://www.techtarget.com/searchstorage/definition/cache-memory)

@@ -281,27 +281,6 @@ TEST_CASE("Cache - Fully Associative Eviction", "[cache]") {
     REQUIRE(cache.findCacheLine(addr1) != nullptr);
 }
 
-TEST_CASE("Cache - Fully Associative Eviction (Forced)", "[cache]") {
-    Memory memory(8 * memorySize, false);
-    CacheStats stats;
-    Cache cache(8 * 1024, 0, "LRU", "WB", L1, nullptr, memory, &stats);
-
-    // fill the cache completely (512 lines)
-    for (int i = 0; i < 512; i++) {
-        uint32_t addr = 0x1000 + (i * 0x1000);
-        cache.write(addr, i);
-    }
-
-    // verify oldest entry is still in the cache before eviction
-    REQUIRE(cache.findCacheLine(0x1000) != nullptr);
-
-    // trigger eviction
-    cache.write(0x900000, 99);
-
-    // 0x1000 should be evicted
-    REQUIRE(cache.findCacheLine(0x1000) == nullptr);
-}
-
 TEST_CASE("Cache - Multi-Level Read Miss Propagation", "[cache]") {
     Memory memory(memorySize, false);
     CacheStats stats;

@@ -4,9 +4,9 @@
 
 TEST_CASE("Cache Config - All Cache Sizes", "[cache_config]") {
     auto [cacheSize, l1, l2, l3] = GENERATE(
-        std::make_tuple("small", 8 * 1024, 32 * 1024, 256 * 1024),
-        std::make_tuple("medium", 16 * 1024, 64 * 1024, 512 * 1024),
-        std::make_tuple("large", 32 * 1024, 128 * 1024, 1024 * 1024)
+        std::make_tuple("small", 16 * 1024, 128 * 1024, 512 * 1024),
+        std::make_tuple("medium", 64 * 1024, 512 * 1024, 4 * 1024 * 1024),
+        std::make_tuple("large", 512 * 1024, 2 * 1024 * 1024, 8 * 1024 * 1024)
     );
 
     CacheConfig config = getCacheSizes(cacheSize);

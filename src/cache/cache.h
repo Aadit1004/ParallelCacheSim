@@ -4,9 +4,14 @@
 #include <unordered_map>
 #include <cmath>
 #include <climits>
+#include <deque>
 #include "../memory/memory.h"
 #include "../exception/cache_exception.h"
 #include "mesi.h"
+#include "../threading/core_manager.h"
+
+// forward declaring
+class CoreManager;
 
 enum Level {
     L1,
@@ -16,7 +21,7 @@ enum Level {
 
 namespace defaults
 {
-    static constexpr int BLOCK_SIZE = 16;
+    static constexpr int BLOCK_SIZE = 64;
     static const int ADDRESS_BITS = sizeof(uint32_t) * 8;
 }
 
@@ -74,10 +79,12 @@ struct CacheStats {
 class Cache {
 
 public:
-    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose = false);
+    Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, std::string t_write_policy, Level t_cache_level, 
+        Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose = false, CoreManager* t_core_manager = nullptr);
     int read(uint32_t t_address);
     void write(uint32_t t_address, int t_value);
     CacheLine* findCacheLine(uint32_t t_address);
+    void updateMESI(uint32_t t_address, MESI_State new_state);
     void flushCache();
 
     // public getters for testing
@@ -112,4 +119,6 @@ private:
     Memory& m_memory;
     CacheStats* m_stats;
     bool m_isVerbose;
+    CoreManager* m_core_manager;
+    std::mutex cache_mutex;
 };

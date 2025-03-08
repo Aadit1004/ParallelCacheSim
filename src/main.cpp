@@ -1,9 +1,11 @@
 #include <iostream>
 #include <unordered_map>
+#include <chrono>
 #include "cli/arg_parser.h"
 #include "memory/memory.h"
 #include "io/file_manager.h"
 #include "cache/cache.h"
+#include "threading/core_manager.h"
 
 int getMemorySize(std::string& t_size) {
     if (t_size == "small") { 
@@ -18,7 +20,7 @@ int getMemorySize(std::string& t_size) {
 void handleSingleThread(ValidParams& params, Memory& memory, FileManager& fm, CacheStats* stats) {
     Cache* L3_cache = new Cache(params.l3_cache_size, params.associativity, params.replacement_policy, params.write_policy, L3, nullptr, memory, stats, params.isVerbose);
     Cache* L2_cache = new Cache(params.l2_cache_size, params.associativity, params.replacement_policy, params.write_policy, L2, L3_cache, memory, stats, params.isVerbose);
-    Cache* L1_cache = new Cache(params.l1_cache_size, params.associativity, params.replacement_policy, params.write_policy, L1, L2_cache, memory, stats, params.isVerbose);
+    Cache* L1_cache = new Cache(params.l1_cache_size, params.associativity, params.replacement_policy, params.write_policy, L1, L2_cache, memory, stats, params.isVerbose, nullptr);
     while (fm.getNumOperations() != 0) {
         std::optional<MemoryRequest> opt_request = fm.getNextRequest();
         if (opt_request.has_value()) {
@@ -59,10 +61,19 @@ int main(int argc, char *argv[]) {
                 fm.parseFile();
                 CacheStats stats;
                 if (params.num_threads == 1) {
+                    auto t1 = std::chrono::high_resolution_clock::now();
                     handleSingleThread(params, memory, fm, &stats);
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    std::cout << "time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms" << std::endl;
                     stats.printSummary();
                 } else {
-                    // use CoreManager, MESI, and call CoreManager::startSimulation()
+                    CoreManager* core_manager = new CoreManager(params.num_threads, &params, &fm, memory, params.isVerbose, &stats);
+                    auto t1 = std::chrono::high_resolution_clock::now();
+                    core_manager->startSimulation();
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    std::cout << "time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms" << std::endl;
+                    stats.printSummary();
+                    delete core_manager;
                 }
             } else {
                 std::cout << "Invalid file - Not a .txt extension or located in examples/" << std::endl;

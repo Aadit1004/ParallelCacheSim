@@ -5,9 +5,14 @@
 #include <mutex>
 #include <algorithm>
 #include "../cache/cache.h"
+#include "../cache/mesi.h"
 #include "../cli/arg_parser.h"
 #include "../io/file_manager.h"
 #include "../memory/memory.h"
+
+// forwarding declarations to avoid circular dependency issues
+class Cache;
+struct CacheStats;
 
 class CoreManager {
 
@@ -17,6 +22,9 @@ public:
 
     void startSimulation();
     void workerThread(int thread_id);
+    void invalidateOtherCaches(uint32_t address, Cache* requester);
+    void downgradeModifiedToShared(uint32_t address, Cache* requester);
+    void handleWriteBackBeforeInvalidation(uint32_t address, Cache* requester);
 
     // for testing
     int getNumL1Caches() const { return L1_caches.size(); }

@@ -19,7 +19,7 @@ TEST_PROF_TARGET = cache_test_prof
 
 # source files
 SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/cli/arg_parser.cpp $(SRC_DIR)/cache/cache_config.cpp $(SRC_DIR)/cache/cache.cpp $(SRC_DIR)/memory/memory.cpp $(SRC_DIR)/io/file_manager.cpp 
-SRCS += $(SRC_DIR)/threading/core_manager.cpp $(SRC_DIR)/cache/mesi.cpp
+SRCS += $(SRC_DIR)/threading/core_manager.cpp
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(filter-out $(SRC_DIR)/main.cpp, $(SRCS))) # exclude main.cpp for test build
 
 # test files
@@ -80,6 +80,7 @@ $(TEST_PROF_TARGET): $(TEST_OBJS) $(OBJS)
 # gprof support
 gprof-run: $(PROF_TARGET)
 	rm -f gmon.out
+	@echo "Running: ./$(PROF_TARGET) $(ARGS)"
 	./$(PROF_TARGET) $(ARGS)
 	gprof $(PROF_TARGET) gmon.out > gprof_report.txt
 	cat gprof_report.txt

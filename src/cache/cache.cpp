@@ -11,9 +11,10 @@
 // associativity (num cache lines per set):
 // 1 = directly mapped
 // 4 = 4-Way Set-Associative
+// 8 = 8-Way Set-Associative
 // 0 = fully associative
 Cache::Cache(int t_cache_size, int t_associativity, std::string t_replacement_policy, 
-    std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose) 
+    std::string t_write_policy, Level t_cache_level, Cache* t_next_level, Memory& t_memory, CacheStats* t_stats, bool isVerbose, CoreManager* t_core_manager) 
     : m_replacement_policy(std::move(t_replacement_policy)),
     m_cache_size(t_cache_size),
     m_associativity(t_associativity),
@@ -27,7 +28,8 @@ Cache::Cache(int t_cache_size, int t_associativity, std::string t_replacement_po
     m_cache_level(t_cache_level),
     m_memory(t_memory),
     m_stats(t_stats),
-    m_isVerbose(isVerbose)
+    m_isVerbose(isVerbose),
+    m_core_manager(t_core_manager)
     {
     if (m_associativity == 0) {
         m_cache_sets = std::vector<std::vector<CacheLine>>(1, std::vector<CacheLine>(m_cache_size / defaults::BLOCK_SIZE));
@@ -75,6 +77,7 @@ CacheLine* Cache::findCacheLine(uint32_t t_address) {
 
     return nullptr;
 }
+
 
 void Cache::forwardToNextLevel(uint32_t t_address, bool t_isWrite, int t_value) {
     if (m_next_level_cache != nullptr) {
@@ -211,6 +214,7 @@ void Cache::updateLRU(int t_index, CacheLine* accessedLine) {
     }
 }
 
+
 int Cache::read(uint32_t t_address) {
     if (t_address % sizeof(int) != 0) {
         if (m_isVerbose) std::cerr << "[ERROR] Unaligned cache read at address 0x" << std::hex << t_address << std::dec << "\n";
@@ -252,6 +256,12 @@ int Cache::read(uint32_t t_address) {
             updateLRU((m_associativity == 0) ? 0 : index, line);
         }
 
+        if (m_core_manager != nullptr) {
+            // if another core has this line in MESI_State::MODIFIED, it must downgrade it
+            m_core_manager->downgradeModifiedToShared(t_address, this);
+            updateMESI(t_address, MESI_State::SHARED);
+        }
+
         return retrieved_value;
 
     }
@@ -285,6 +295,10 @@ int Cache::read(uint32_t t_address) {
          line->m_data[i] = m_memory.read(block_start_address + (i * sizeof(int)));
          m_stats->memory_accesses++;
      }
+
+     if (m_core_manager != nullptr) {
+        updateMESI(t_address, MESI_State::EXCLUSIVE);
+    }
 
      if (m_isVerbose) {
         std::cout << "[FETCH] Block loaded from memory into cache. Address Range: 0x" 
@@ -336,6 +350,14 @@ void Cache::write(uint32_t t_address, int t_value) {
         } else if (m_cache_level == Level::L3) {
             m_stats->l3_hits++;
         }
+
+        if (m_core_manager != nullptr) {
+            // if another core has this in MESI_State::MODIFIED, force WB
+            m_core_manager->handleWriteBackBeforeInvalidation(t_address, this);
+            m_core_manager->invalidateOtherCaches(t_address, this);
+        }
+
+        updateMESI(t_address, MESI_State::MODIFIED);
 
         if (m_write_policy == "WB") {
             line->m_dirty = true; // mark as modified for Write-Back
@@ -397,6 +419,12 @@ void Cache::write(uint32_t t_address, int t_value) {
                   << (block_start_address + defaults::BLOCK_SIZE) << std::dec << std::endl;
     }
 
+    if (m_core_manager != nullptr) {
+        m_core_manager->invalidateOtherCaches(t_address, this);
+    }
+
+    updateMESI(t_address, MESI_State::MODIFIED);
+
     if (m_write_policy == "WB") {
         line->m_dirty = true;
         if (m_isVerbose) {
@@ -431,4 +459,18 @@ void Cache::flushCache() {
             }
         }
     }
+}
+
+void Cache::updateMESI(uint32_t t_address, MESI_State new_state) {
+    std::lock_guard<std::mutex> lock(cache_mutex);
+
+    CacheLine* line = findCacheLine(t_address);
+    if (!line) return;  // if the line is not found, we just return
+
+    if (m_isVerbose) {
+        std::cout << "[MESI] Updating MESI state for Address: 0x" << std::hex << t_address 
+                  << " | Old: " << line->m_mesi_state << " -> New: " << new_state << std::dec << std::endl;
+    }
+
+    line->m_mesi_state = new_state;
 }

@@ -51,7 +51,7 @@ bool ArgParser::validateAssociativity() {
     if (!isNumber(m_argument[7]) || m_argument[6] != "-assoc") { return false;
 }
     int assocNum = std::stoi(m_argument[7]);
-    return assocNum == 1 || assocNum == 4 || assocNum == 0;
+    return assocNum == 1 || assocNum == 4 || assocNum == 8 ||assocNum == 0;
 }
 
 bool ArgParser::validateWritePolicy() {
